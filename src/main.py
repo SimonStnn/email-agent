@@ -6,7 +6,7 @@ from typing import Any
 import gradio as gr
 from gradio import ChatMessage
 from gradio.components.chatbot import MetadataDict
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from agent import agent, tools
 
@@ -42,8 +42,8 @@ def _extract_content(value: Any) -> str:
     return str(value)
 
 
-def _format_history_for_agent(history: list[ChatMessage]) -> list[dict[str, str]]:
-    formatted: list[dict[str, str]] = []
+def _format_history_for_agent(history: list[ChatMessage]) -> list[BaseMessage]:
+    formatted: list[BaseMessage] = []
     for msg in history:
         if msg.role not in {"user", "assistant"}:
             continue
@@ -54,7 +54,10 @@ def _format_history_for_agent(history: list[ChatMessage]) -> list[dict[str, str]
 
         content = _extract_content(msg.content)
         if content:
-            formatted.append({"role": msg.role, "content": content})
+            if msg.role == "user":
+                formatted.append(HumanMessage(content=content))
+            else:
+                formatted.append(AIMessage(content=content))
     return formatted
 
 
@@ -78,13 +81,21 @@ def _format_tool_metadata(tool_call: dict) -> tuple[str, MetadataDict]:
     return content, metadata
 
 
-def respond(message: ChatMessage, history: list[ChatMessage]) -> list[ChatMessage] | ChatMessage:
+def respond(
+    message: ChatMessage,
+    history: list[ChatMessage],
+    conversation_state: list[BaseMessage] | None = None,
+) -> tuple[list[ChatMessage] | ChatMessage, list[BaseMessage]]:
     """Gradio callback to forward the conversation to the LangChain agent."""
 
     user_text = _extract_content(message.content) if isinstance(message, ChatMessage) else str(message)
 
-    messages = _format_history_for_agent(history)
-    messages.append({"role": "user", "content": user_text})
+    # Reset stored state when starting a new conversation
+    if not history:
+        conversation_state = []
+
+    messages: list[BaseMessage] = list(conversation_state or _format_history_for_agent(history))
+    messages.append(HumanMessage(content=user_text))
 
     try:
         result = agent.invoke({"messages": messages})  # type: ignore[arg-type]
@@ -92,11 +103,14 @@ def respond(message: ChatMessage, history: list[ChatMessage]) -> list[ChatMessag
         response_text = _extract_content(result)
 
         tool_messages: list[ChatMessage] = []
+        result_messages: list[BaseMessage] = messages[:]
         if isinstance(result, dict) and "messages" in result:
-            for msg in result["messages"]:
-                if not (hasattr(msg, "tool_calls") and msg.tool_calls):
+            result_messages = list(result["messages"])
+            for msg in result_messages:
+                tool_calls = getattr(msg, "tool_calls", None)
+                if not tool_calls:
                     continue
-                for tool_call in msg.tool_calls:
+                for tool_call in tool_calls:
                     content, metadata = _format_tool_metadata(tool_call)
                     tool_messages.append(
                         ChatMessage(
@@ -106,15 +120,19 @@ def respond(message: ChatMessage, history: list[ChatMessage]) -> list[ChatMessag
                         )
                     )
 
+        else:
+            result_messages.append(AIMessage(content=response_text))
+
         final_message = ChatMessage(role="assistant", content=response_text)
 
         if tool_messages:
             tool_messages.append(final_message)
-            return tool_messages
+            return tool_messages, result_messages
 
-        return final_message
+        return final_message, result_messages
     except Exception as exc:
-        return ChatMessage(role="assistant", content=f"⚠️ Agent error: {exc}")
+        error_message = ChatMessage(role="assistant", content=f"⚠️ Agent error: {exc}")
+        return error_message, messages
 
 
 def render_tools() -> None:
@@ -139,11 +157,14 @@ with gr.Blocks(title="Email Research Agent") as demo:
             render_tools()
 
         with gr.Column(scale=3):
+            conversation_state = gr.State(None)
             chat = gr.ChatInterface(
                 fn=respond,
-                examples=["Give me the current weather in bruges. (use your tool)"],
+                examples=[["Give me the current weather in Bruges.", None]],
                 chatbot=gr.Chatbot(type="messages"),
                 type="messages",
+                additional_inputs=[conversation_state],
+                additional_outputs=[conversation_state],
             )
 
 
