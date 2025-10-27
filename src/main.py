@@ -1,1 +1,151 @@
-print("Hello, World!")
+from __future__ import annotations
+
+import json
+from typing import Any
+
+import gradio as gr
+from gradio import ChatMessage
+from gradio.components.chatbot import MetadataDict
+from langchain_core.messages import BaseMessage
+
+from agent import agent, tools
+
+
+def _extract_content(value: Any) -> str:
+    """Extract text content from LangChain responses."""
+
+    if isinstance(value, str):
+        return value
+
+    if isinstance(value, BaseMessage):
+        return str(value.content)
+
+    if isinstance(value, dict):
+        # Check for messages list (common agent response)
+        if "messages" in value and value["messages"]:
+            last_msg = value["messages"][-1]
+            if isinstance(last_msg, BaseMessage):
+                return str(last_msg.content)
+            if isinstance(last_msg, dict) and "content" in last_msg:
+                return str(last_msg["content"])
+
+        # Check common output keys
+        for key in ("output", "content", "answer"):
+            if key in value:
+                return _extract_content(value[key])
+
+    if isinstance(value, list) and value:
+        last = value[-1]
+        if isinstance(last, BaseMessage):
+            return str(last.content)
+
+    return str(value)
+
+
+def _format_history_for_agent(history: list[ChatMessage]) -> list[dict[str, str]]:
+    formatted: list[dict[str, str]] = []
+    for msg in history:
+        if msg.role not in {"user", "assistant"}:
+            continue
+
+        if msg.role == "assistant" and msg.metadata:
+            # Skip assistant tool/thought messages when forwarding to the agent
+            continue
+
+        content = _extract_content(msg.content)
+        if content:
+            formatted.append({"role": msg.role, "content": content})
+    return formatted
+
+
+def _format_tool_metadata(tool_call: dict) -> tuple[str, MetadataDict]:
+    tool_name = tool_call.get("name", "unknown")
+    metadata: MetadataDict = {"title": f"Used `{tool_name}`", "status": "done"}
+
+    args = tool_call.get("args") or tool_call.get("arguments")
+    if args:
+        if isinstance(args, str):
+            log = args
+        else:
+            try:
+                log = json.dumps(args, ensure_ascii=False)
+            except (TypeError, ValueError):
+                log = str(args)
+        metadata["log"] = log[:500]
+
+    content = f"Called `{tool_name}`."
+
+    return content, metadata
+
+
+def respond(message: ChatMessage, history: list[ChatMessage]) -> list[ChatMessage] | ChatMessage:
+    """Gradio callback to forward the conversation to the LangChain agent."""
+
+    user_text = _extract_content(message.content) if isinstance(message, ChatMessage) else str(message)
+
+    messages = _format_history_for_agent(history)
+    messages.append({"role": "user", "content": user_text})
+
+    try:
+        result = agent.invoke({"messages": messages})  # type: ignore[arg-type]
+
+        response_text = _extract_content(result)
+
+        tool_messages: list[ChatMessage] = []
+        if isinstance(result, dict) and "messages" in result:
+            for msg in result["messages"]:
+                if not (hasattr(msg, "tool_calls") and msg.tool_calls):
+                    continue
+                for tool_call in msg.tool_calls:
+                    content, metadata = _format_tool_metadata(tool_call)
+                    tool_messages.append(
+                        ChatMessage(
+                            role="assistant",
+                            content=content,
+                            metadata=metadata,
+                        )
+                    )
+
+        final_message = ChatMessage(role="assistant", content=response_text)
+
+        if tool_messages:
+            tool_messages.append(final_message)
+            return tool_messages
+
+        return final_message
+    except Exception as exc:
+        return ChatMessage(role="assistant", content=f"⚠️ Agent error: {exc}")
+
+
+def render_tools() -> None:
+    """Generate markdown list of available tools."""
+    if not tools:
+        gr.Label("No tools available.")
+        return
+
+    gr.Markdown("## Available Tools")
+    for tool in tools:
+        tool_name = tool.name if hasattr(tool, "name") else str(tool)
+        tool_desc = tool.description if hasattr(tool, "description") else "No description available"
+
+        with gr.Accordion(tool_name, open=True):
+            gr.Markdown(tool_desc)
+
+
+with gr.Blocks(title="Email Research Agent") as demo:
+    gr.Markdown("# Email Agent")
+    with gr.Row():
+        with gr.Column(scale=1):
+            render_tools()
+
+        with gr.Column(scale=3):
+            chat = gr.ChatInterface(
+                fn=respond,
+                examples=["Give me the current weather in bruges. (use your tool)"],
+                chatbot=gr.Chatbot(type="messages"),
+                type="messages",
+            )
+
+
+if __name__ == "__main__":
+    demo.launch()
