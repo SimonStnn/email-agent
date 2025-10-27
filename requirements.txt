@@ -1,0 +1,17 @@
+# Enhanced Python features
+python-dotenv
+pydantic
+pydantic-settings
+rich
+
+# Providers
+langchain
+langchain-ollama
+pinecone
+
+# Formatters, linters, type checkers and pre-commit hooks
+black
+isort
+flake8
+mypy
+pre-commit
