@@ -96,6 +96,7 @@ def respond(
 
     messages: list[BaseMessage] = list(conversation_state or _format_history_for_agent(history))
     messages.append(HumanMessage(content=user_text))
+    base_length = len(messages)
 
     try:
         result = agent.invoke({"messages": messages})  # type: ignore[arg-type]
@@ -103,25 +104,27 @@ def respond(
         response_text = _extract_content(result)
 
         tool_messages: list[ChatMessage] = []
-        result_messages: list[BaseMessage] = messages[:]
+        result_messages: list[BaseMessage] = list(messages)
         if isinstance(result, dict) and "messages" in result:
             result_messages = list(result["messages"])
-            for msg in result_messages:
-                tool_calls = getattr(msg, "tool_calls", None)
-                if not tool_calls:
-                    continue
-                for tool_call in tool_calls:
-                    content, metadata = _format_tool_metadata(tool_call)
-                    tool_messages.append(
-                        ChatMessage(
-                            role="assistant",
-                            content=content,
-                            metadata=metadata,
-                        )
-                    )
 
         else:
             result_messages.append(AIMessage(content=response_text))
+
+        recent_messages = result_messages[base_length:] if len(result_messages) >= base_length else []
+        for msg in recent_messages:
+            tool_calls = getattr(msg, "tool_calls", None)
+            if not tool_calls:
+                continue
+            for tool_call in tool_calls:
+                content, metadata = _format_tool_metadata(tool_call)
+                tool_messages.append(
+                    ChatMessage(
+                        role="assistant",
+                        content=content,
+                        metadata=metadata,
+                    )
+                )
 
         final_message = ChatMessage(role="assistant", content=response_text)
 
@@ -150,10 +153,11 @@ def render_tools() -> None:
             gr.Markdown(tool_desc)
 
 
-with gr.Blocks(title="Email Research Agent") as demo:
-    gr.Markdown("# Email Agent")
-    with gr.Row():
+with gr.Blocks(title="Email Agent", fill_height=True) as demo:
+    with gr.Row(scale=1):
         with gr.Column(scale=1):
+            gr.Markdown("# Email Agent")
+            gr.Markdown("---")
             render_tools()
 
         with gr.Column(scale=3):
@@ -161,12 +165,15 @@ with gr.Blocks(title="Email Research Agent") as demo:
             chat = gr.ChatInterface(
                 fn=respond,
                 examples=[["Give me the current weather in Bruges.", None]],
-                chatbot=gr.Chatbot(type="messages"),
+                chatbot=gr.Chatbot(type="messages", height="80dvh"),
                 type="messages",
                 additional_inputs=[conversation_state],
                 additional_outputs=[conversation_state],
+                fill_height=True,
             )
 
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(
+        debug=True,
+    )
