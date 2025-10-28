@@ -1,3 +1,6 @@
+from pathlib import Path
+from typing import Any
+
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain_core.output_parsers import PydanticOutputParser
@@ -7,9 +10,13 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import AzureChatOpenAI
 from pydantic import BaseModel
 
-from tools import get_weather_for_location
+from tools import classify_message
 
 load_dotenv()
+
+ROOT = Path(__file__).parent.resolve()
+AGENT_PATH = ROOT.parent / "config" / "agent"
+AGENT_CONF = AGENT_PATH / "system_prompt.md"
 
 
 class ResearchResponse(BaseModel):
@@ -31,16 +38,13 @@ model = AzureChatOpenAI(
 )
 parser = PydanticOutputParser(pydantic_object=ResearchResponse)
 
+system_prompt = AGENT_CONF.read_text(encoding="utf-8").strip()
 
 prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            """
-                You are a research assistant that will help generate a research paper.
-                Answer the user query and use neccessary tools.
-                Wrap the output in this format and provide no other text\n{format_instructions}
-                """,
+            (f"{system_prompt}" "\n\n{format_instructions}"),
         ),
         ("placeholder", "{chat_history}"),
         ("human", "{query}"),
@@ -48,6 +52,7 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 ).partial(format_instructions=parser.get_format_instructions())
 
-tools = [get_weather_for_location]
+tools = [classify_message]
 
-agent = create_agent(model=model, tools=tools)
+Agent = Any
+agent: Agent = create_agent(model=model, tools=tools, system_prompt=system_prompt)

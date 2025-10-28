@@ -74,7 +74,7 @@ def _format_tool_metadata(tool_call: dict[str, Any], tool_response: ToolMessage 
                 log = json.dumps(args, ensure_ascii=False)
             except (TypeError, ValueError):
                 log = str(args)
-        metadata["log"] = log[:500]
+        metadata["log"] = log[:50] + ("..." if len(log) > 50 else "")
 
     content = str(tool_response.content) if tool_response else f"Called `{tool_name}`."
 

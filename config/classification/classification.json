@@ -1,0 +1,18 @@
+[
+  {
+    "category": "Sales orders",
+    "description": "Emails from customers where the customer sends his purchase order for products."
+  },
+  {
+    "category": "RFQ",
+    "description": "Request for quotes are emails where the customer describes in the body of the email a request to get a quotation for the printing and finishing of labels, packaging, flexible packaging, …"
+  },
+  {
+    "category": "ASN",
+    "description": "Advanced shipping notes are emails from materials suppliers where the delivery of materials is announced. These ASN emails often consist of lists with the individual pallets or rolls of paper that will be delivered, where every pallet/roll is uniquely identified. For purchase orders without EDI implementation, the users identify the pallets/rolls at the reception of the material deliveries."
+  },
+  {
+    "category": "Invoices",
+    "description": "Emails from suppliers where the supplier sends his invoice for products or services delivered."
+  }
+]
