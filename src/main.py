@@ -6,7 +6,7 @@ from typing import Any
 import gradio as gr
 from gradio import ChatMessage
 from gradio.components.chatbot import MetadataDict
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 
 from agent import agent, tools
 
@@ -61,9 +61,9 @@ def _format_history_for_agent(history: list[ChatMessage]) -> list[BaseMessage]:
     return formatted
 
 
-def _format_tool_metadata(tool_call: dict) -> tuple[str, MetadataDict]:
+def _format_tool_metadata(tool_call: dict[str, Any], tool_response: ToolMessage | None) -> tuple[str, MetadataDict]:
     tool_name = tool_call.get("name", "unknown")
-    metadata: MetadataDict = {"title": f"Used `{tool_name}`", "status": "done"}
+    metadata: MetadataDict = {"title": f"🛠️ Used `{tool_name}`", "status": "done"}
 
     args = tool_call.get("args") or tool_call.get("arguments")
     if args:
@@ -76,13 +76,13 @@ def _format_tool_metadata(tool_call: dict) -> tuple[str, MetadataDict]:
                 log = str(args)
         metadata["log"] = log[:500]
 
-    content = f"Called `{tool_name}`."
+    content = str(tool_response.content) if tool_response else f"Called `{tool_name}`."
 
     return content, metadata
 
 
 def respond(
-    message: ChatMessage,
+    message: ChatMessage | str,
     history: list[ChatMessage],
     conversation_state: list[BaseMessage] | None = None,
 ) -> tuple[list[ChatMessage] | ChatMessage, list[BaseMessage]]:
@@ -96,7 +96,7 @@ def respond(
 
     messages: list[BaseMessage] = list(conversation_state or _format_history_for_agent(history))
     messages.append(HumanMessage(content=user_text))
-    base_length = len(messages)
+    base_length: int = len(messages)
 
     try:
         result = agent.invoke({"messages": messages})  # type: ignore[arg-type]
@@ -104,20 +104,31 @@ def respond(
         response_text = _extract_content(result)
 
         tool_messages: list[ChatMessage] = []
-        result_messages: list[BaseMessage] = list(messages)
+
         if isinstance(result, dict) and "messages" in result:
-            result_messages = list(result["messages"])
-
+            messages = list(result["messages"])
         else:
-            result_messages.append(AIMessage(content=response_text))
+            messages.append(AIMessage(content=response_text))
 
-        recent_messages = result_messages[base_length:] if len(result_messages) >= base_length else []
-        for msg in recent_messages:
-            tool_calls = getattr(msg, "tool_calls", None)
+        # Get messages since last user input
+        recent_messages = messages[base_length:] if len(messages) >= base_length else []
+        # filter(lambda m: isinstance(m, ToolMessage), recent_messages):
+        for i, msg in enumerate(recent_messages):
+            tool_calls: list[dict[str, Any]] | None = getattr(msg, "tool_calls", None)
             if not tool_calls:
                 continue
+
             for tool_call in tool_calls:
-                content, metadata = _format_tool_metadata(tool_call)
+                call_id = tool_call.get("id", f"call_{i}")
+                tool_response = next(
+                    (
+                        m
+                        for m in recent_messages[i + 1 :]
+                        if isinstance(m, ToolMessage) and getattr(m, "tool_call_id", None) == call_id
+                    ),
+                    None,
+                )
+                content, metadata = _format_tool_metadata(tool_call, tool_response)
                 tool_messages.append(
                     ChatMessage(
                         role="assistant",
@@ -130,9 +141,9 @@ def respond(
 
         if tool_messages:
             tool_messages.append(final_message)
-            return tool_messages, result_messages
+            return tool_messages, messages
 
-        return final_message, result_messages
+        return final_message, messages
     except Exception as exc:
         error_message = ChatMessage(role="assistant", content=f"⚠️ Agent error: {exc}")
         return error_message, messages

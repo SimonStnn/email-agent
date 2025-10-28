@@ -24,5 +24,7 @@ ignore_missing_imports = true
 strict = false
 
 [tool.flake8]
-extend-ignore = ["E501"] # Ignore line length warnings
+# E203: Whitespace before ':' (Black's formatting)
+# E501: Line too long (Black's formatting)
+extend-ignore = ["E203", "E501"]
 exclude = [".git", "__pycache__", "build", "dist"]
