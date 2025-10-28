@@ -10,7 +10,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import AzureChatOpenAI
 from pydantic import BaseModel
 
-from tools import classify_message
+from tools import classify_message, save_order
 
 load_dotenv()
 
@@ -52,7 +52,7 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 ).partial(format_instructions=parser.get_format_instructions())
 
-tools = [classify_message]
+tools = [classify_message, save_order]
 
 Agent = Any
 agent: Agent = create_agent(model=model, tools=tools, system_prompt=system_prompt)
