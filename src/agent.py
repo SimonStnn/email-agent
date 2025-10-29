@@ -1,16 +1,18 @@
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import BaseTool
 
 # from langchain_ollama import ChatOllama
 from langchain_openai import AzureChatOpenAI
 from pydantic import BaseModel
 
-from tools import classify_message, save_order
+from tools.classify_message import classify_message
+from tools.save_order import save_order
 
 load_dotenv()
 
@@ -52,7 +54,14 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 ).partial(format_instructions=parser.get_format_instructions())
 
-tools = [classify_message, save_order]
+tools: Sequence[BaseTool] = [
+    classify_message,
+    save_order,
+]
 
 Agent = Any
-agent: Agent = create_agent(model=model, tools=tools, system_prompt=system_prompt)
+agent: Agent = create_agent(
+    model=model,
+    tools=tools,
+    system_prompt=system_prompt,
+)

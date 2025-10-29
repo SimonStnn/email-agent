@@ -164,8 +164,8 @@ def render_tools() -> None:
             gr.Markdown(tool_desc)
 
 
-with gr.Blocks(title="Email Agent", fill_height=True) as demo:
-    with gr.Row(scale=1):
+with gr.Blocks(title="Email Agent") as demo:
+    with gr.Row():
         with gr.Column(scale=1):
             gr.Markdown("# Email Agent")
             gr.Markdown("---")
@@ -175,12 +175,12 @@ with gr.Blocks(title="Email Agent", fill_height=True) as demo:
             conversation_state = gr.State(None)
             chat = gr.ChatInterface(
                 fn=respond,
-                examples=[["Give me the current weather in Bruges.", None]],
                 chatbot=gr.Chatbot(type="messages", height="80dvh"),
                 type="messages",
                 additional_inputs=[conversation_state],
                 additional_outputs=[conversation_state],
                 fill_height=True,
+                multimodal=True,
             )
 
 
