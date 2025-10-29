@@ -18,3 +18,7 @@ flake8~=7.3.0
 flake8-pyproject~=1.2.3
 mypy~=1.18.2
 pre-commit~=4.3.0
+
+# MCP server dependencies
+mcp[cli]>=1.2.0
+mcpo~=0.0.19
