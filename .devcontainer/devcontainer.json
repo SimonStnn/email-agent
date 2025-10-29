@@ -4,5 +4,6 @@
 	"features": {
 		"ghcr.io/dhoeric/features/act:1": {},
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
-	}
+	},
+	"remoteUser": "root"
 }
