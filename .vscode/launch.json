@@ -10,6 +10,13 @@
             "request": "launch",
             "program": "${workspaceFolder}/src/main.py",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "MCP Server",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/run_mcp.py",
+            "console": "integratedTerminal"
         }
     ]
 }
