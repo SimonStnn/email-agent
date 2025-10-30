@@ -8,14 +8,14 @@
             "name": "Gradio App",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/run_gradio.py",
+            "program": "${workspaceFolder}/src/start_gradio.py",
             "console": "integratedTerminal"
         },
         {
             "name": "MCP Server",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/run_mcp.py",
+            "program": "${workspaceFolder}/src/start_mcp.py",
             "console": "integratedTerminal"
         }
     ]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any
 
@@ -8,7 +9,11 @@ from gradio import ChatMessage
 from gradio.components.chatbot import MetadataDict
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 
-from agent import agent, tools
+from agent import agent
+from mcp_server import mcp
+from tools import *  # noqa: F401 F403 # import all registered tools
+
+tools = asyncio.run(mcp.list_tools())
 
 
 def _extract_content(value: Any) -> str:
@@ -180,7 +185,7 @@ with gr.Blocks(title="Email Agent") as demo:
                 additional_inputs=[conversation_state],
                 additional_outputs=[conversation_state],
                 fill_height=True,
-                multimodal=True,
+                # multimodal=True,
             )
 
 

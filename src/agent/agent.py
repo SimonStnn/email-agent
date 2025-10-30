@@ -1,23 +1,21 @@
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.tools import BaseTool
 
-# from langchain_ollama import ChatOllama
-from langchain_openai import AzureChatOpenAI
+# from langchain_core.tools import BaseTool
+from langchain_ollama import ChatOllama
+
+# from langchain_openai import AzureChatOpenAI
 from pydantic import BaseModel
-
-from tools.classify_message import classify_message
-from tools.save_order import save_order
 
 load_dotenv()
 
-ROOT = Path(__file__).parent.resolve()
-AGENT_PATH = ROOT.parent / "config" / "agent"
+ROOT = Path(__file__).parent.parent.parent.resolve()
+AGENT_PATH = ROOT / "config" / "agent"
 AGENT_CONF = AGENT_PATH / "system_prompt.md"
 
 
@@ -28,19 +26,22 @@ class ResearchResponse(BaseModel):
     tools_used: list[str]
 
 
-# model = ChatOllama(
-#     model="gpt-oss:20b",
-#     reasoning=None,
-#     temperature=0.7,
-# )
-model = AzureChatOpenAI(
-    azure_deployment="gpt-5-mini",
-    # reasoning=None,
-    # temperature=0.7,
+model = ChatOllama(
+    model="gpt-oss:20b",
+    reasoning=None,
+    temperature=0.7,
 )
+# model = AzureChatOpenAI(
+#     azure_deployment="gpt-5-mini",
+#     # reasoning=None,
+#     # temperature=0.7,
+# )
 parser = PydanticOutputParser(pydantic_object=ResearchResponse)
 
-system_prompt = AGENT_CONF.read_text(encoding="utf-8").strip()
+system_prompt = (
+    "You are an AI research assistant that helps users gather information on various topics using available tools."
+)
+# system_prompt = AGENT_CONF.read_text(encoding="utf-8").strip()
 
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -54,14 +55,8 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 ).partial(format_instructions=parser.get_format_instructions())
 
-tools: Sequence[BaseTool] = [
-    classify_message,
-    save_order,
-]
-
 Agent = Any
 agent: Agent = create_agent(
     model=model,
-    tools=tools,
     system_prompt=system_prompt,
 )
