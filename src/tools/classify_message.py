@@ -5,7 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from langchain.tools import tool
+# from langchain.tools import tool
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, RootModel
@@ -42,6 +42,9 @@ logger = logging.getLogger(__name__)
 
 @lru_cache(maxsize=1)
 def get_classifications() -> list[Classification]:
+    """
+    Get the list of message classifications.
+    """
     data = json.loads(CLASSIFICATIONS_CONF.read_text(encoding="utf-8"))
     return __Classifications.model_validate(data).root
 
@@ -123,7 +126,6 @@ def _pick_category(response_text: str, categories: list[str]) -> str:
     return "Other"
 
 
-@tool
 def classify_message(message: str) -> str:
     """
     Classify a message into one of the predefined categories.

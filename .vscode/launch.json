@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: AI Email Assistant",
+            "name": "Gradio App",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/main.py",
+            "program": "${workspaceFolder}/src/run_gradio.py",
             "console": "integratedTerminal"
         },
         {
