@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "CERM MCP Client": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "http://0.0.0.0:8000/mcp",
+        "--allow-http"
+      ]
+    }
+  }
+}
