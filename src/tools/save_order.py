@@ -4,6 +4,8 @@ from pathlib import Path
 # from langchain.tools import tool
 from pydantic import BaseModel
 
+from mcp_server import mcp
+
 ROOT = Path(__file__).parent.parent.resolve()
 
 
@@ -31,6 +33,7 @@ class OrderConfirmation(BaseModel):
     success: bool
 
 
+@mcp.tool()
 def save_order(order: Order) -> OrderConfirmation:
     """
     Save an order into the database.
@@ -47,13 +50,11 @@ def save_order(order: Order) -> OrderConfirmation:
     )
 
 
+@mcp.tool()
 def verify_order(order_id: OrderID) -> bool:
     """
     Verify if an order with the given ID exists.
     """
-    # Placeholder implementation: check if any file contains the order_id
-    for order_file in ORDERS_PATH.glob("*.json"):
-        content = order_file.read_text(encoding="utf-8")
-        if order_id in content:
-            return True
-    return False
+    # Check whether a file named "<order_id>.json" exists in ORDERS_PATH
+    path = ORDERS_PATH / f"{order_id}.json"
+    return path.exists()
