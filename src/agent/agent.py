@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from typing import Any
 
@@ -5,12 +6,17 @@ from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_mcp_adapters.tools import load_mcp_tools
 
 # from langchain_core.tools import BaseTool
 from langchain_ollama import ChatOllama
 
 # from langchain_openai import AzureChatOpenAI
 from pydantic import BaseModel
+
+from const import CERM_MCP_SERVER_NAME
+
+from .mcp_client import client as mcp_client
 
 load_dotenv()
 
@@ -55,8 +61,12 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 ).partial(format_instructions=parser.get_format_instructions())
 
+
+async def load_tools() -> list[Any]:
+    async with mcp_client.session(CERM_MCP_SERVER_NAME) as session:
+        tools = await load_mcp_tools(session)
+    return tools
+
+
 Agent = Any
-agent: Agent = create_agent(
-    model=model,
-    system_prompt=system_prompt,
-)
+agent: Agent = create_agent(model=model, system_prompt=system_prompt, tools=asyncio.run(load_tools()))
