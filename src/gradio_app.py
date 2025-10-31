@@ -8,12 +8,10 @@ import gradio as gr
 from gradio import ChatMessage
 from gradio.components.chatbot import MetadataDict
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
+from langchain_mcp_adapters.tools import load_mcp_tools
 
-from agent import agent
-from mcp_server import mcp
-from tools import *  # noqa: F401 F403 # import all registered tools
-
-tools = asyncio.run(mcp.list_tools())
+from agent import agent, init_agent, invoke_agent, mcp_client
+from const import CERM_MCP_SERVER_NAME
 
 
 def _extract_content(value: Any) -> str:
@@ -86,12 +84,12 @@ def _format_tool_metadata(tool_call: dict[str, Any], tool_response: ToolMessage 
     return content, metadata
 
 
-def respond(
+async def respond(
     message: ChatMessage | str,
     history: list[ChatMessage],
     conversation_state: list[BaseMessage] | None = None,
 ) -> tuple[list[ChatMessage] | ChatMessage, list[BaseMessage]]:
-    """Gradio callback to forward the conversation to the LangChain agent."""
+    """Async Gradio callback to forward the conversation to the LangChain agent."""
 
     user_text = _extract_content(message.content) if isinstance(message, ChatMessage) else str(message)
 
@@ -104,7 +102,11 @@ def respond(
     base_length: int = len(messages)
 
     try:
-        result = agent.invoke({"messages": messages})  # type: ignore[arg-type]
+        # Ensure agent is initialized (this will create the MCP session and tools)
+        if agent is None:
+            await init_agent()
+
+        result, _ = await invoke_agent(messages)
 
         response_text = _extract_content(result)
 
@@ -117,7 +119,6 @@ def respond(
 
         # Get messages since last user input
         recent_messages = messages[base_length:] if len(messages) >= base_length else []
-        # filter(lambda m: isinstance(m, ToolMessage), recent_messages):
         for i, msg in enumerate(recent_messages):
             tool_calls: list[dict[str, Any]] | None = getattr(msg, "tool_calls", None)
             if not tool_calls:
@@ -154,19 +155,25 @@ def respond(
         return error_message, messages
 
 
-def render_tools() -> None:
+def render_mcp_client_info() -> None:
+    """Display MCP client connection info."""
+    gr.Markdown(f"**MCP Server:** Connected to `{mcp_client.connections.keys()}`")
+
+
+async def render_tools() -> None:
     """Generate markdown list of available tools."""
+    # Try fetching tools from MCP server; fall back to any local `tools` list if present
+    async with mcp_client.session(CERM_MCP_SERVER_NAME) as session:
+        tools = await load_mcp_tools(session)
+
     if not tools:
         gr.Label("No tools available.")
         return
 
     gr.Markdown("## Available Tools")
     for tool in tools:
-        tool_name = tool.name if hasattr(tool, "name") else str(tool)
-        tool_desc = tool.description if hasattr(tool, "description") else "No description available"
-
-        with gr.Accordion(tool_name, open=True):
-            gr.Markdown(tool_desc)
+        with gr.Accordion(tool.name, open=True):
+            gr.Markdown(tool.description)
 
 
 with gr.Blocks(title="Email Agent") as demo:
@@ -174,7 +181,9 @@ with gr.Blocks(title="Email Agent") as demo:
         with gr.Column(scale=1):
             gr.Markdown("# Email Agent")
             gr.Markdown("---")
-            render_tools()
+            render_mcp_client_info()
+            gr.Markdown("---")
+            asyncio.run(render_tools())
 
         with gr.Column(scale=3):
             conversation_state = gr.State(None)
