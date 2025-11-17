@@ -5,13 +5,12 @@ import json
 from typing import Any
 
 import gradio as gr
+from agent import agent, init_agent, invoke_agent, mcp_client
+from const import CERM_MCP_SERVER_NAME
 from gradio import ChatMessage
 from gradio.components.chatbot import MetadataDict
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_mcp_adapters.tools import load_mcp_tools
-
-from agent import agent, init_agent, invoke_agent, mcp_client
-from const import CERM_MCP_SERVER_NAME
 
 
 def _extract_content(value: Any) -> str:
@@ -200,5 +199,7 @@ with gr.Blocks(title="Email Agent") as demo:
 
 if __name__ == "__main__":
     demo.launch(
+        server_name="0.0.0.0",
+        server_port=7860,
         debug=True,
     )

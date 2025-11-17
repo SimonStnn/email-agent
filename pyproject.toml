@@ -55,3 +55,9 @@ strict = false
 # E501: Line too long (Black's formatting)
 extend-ignore = ["E203", "E501"]
 exclude = [".git", "__pycache__", "build", "dist"]
+
+[tool.uv.workspace]
+members = [
+    "mcp",
+    "gradio",
+]

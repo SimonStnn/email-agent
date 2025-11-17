@@ -1,10 +1,10 @@
 from datetime import datetime
 from pathlib import Path
 
+from mcp_server import mcp
+
 # from langchain.tools import tool
 from pydantic import BaseModel
-
-from mcp_server import mcp
 
 ROOT = Path(__file__).parent.parent.resolve()
 

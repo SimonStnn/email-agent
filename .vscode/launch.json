@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Gradio App",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/src/start_gradio.py",
-            "console": "integratedTerminal"
-        },
-        {
             "name": "MCP Server",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/src/start_mcp.py",
+            "program": "${workspaceFolder}/mcp-server/src/start_mcp.py",
             "console": "integratedTerminal"
-        }
+        },
+        {
+            "name": "Gradio App",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/gradio-app/src/start_gradio.py",
+            "console": "integratedTerminal"
+        },
     ]
 }
