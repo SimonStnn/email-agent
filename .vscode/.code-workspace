@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"name": "Root",
+			"path": ".."
+		},
+		{
+			"name": "MCP Server",
+			"path": "../mcp-server"
+		},
+		{
+			"name": "Gradio App",
+			"path": "../gradio-app"
+		},
+	],
+	"settings": {
+		"files.exclude": {
+      "mcp-server/": true,
+      "gradio-app/": true,
+    },
+	}
+}
