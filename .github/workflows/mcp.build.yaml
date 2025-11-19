@@ -7,9 +7,13 @@ name: Build and Publish MCP Docker Image
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths:
+      - "mcp-server/**"
   pull_request:
     branches: ["main"]
+    paths:
+      - "mcp-server/**"
 
 env:
   # Use docker.io for Docker Hub if empty

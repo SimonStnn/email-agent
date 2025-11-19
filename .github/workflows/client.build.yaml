@@ -7,9 +7,13 @@ name: Build and Publish Client Docker Image
 
 on:
   push:
-    # branches: [ "main" ]
+    branches: ["main"]
+    paths:
+      - "gradio-app/**"
   pull_request:
     branches: ["main"]
+    paths:
+      - "gradio-app/**"
 
 env:
   # Use docker.io for Docker Hub if empty
