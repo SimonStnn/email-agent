@@ -52,7 +52,7 @@ prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            (f"{system_prompt}" "\n\n{format_instructions}"),
+            (f"{system_prompt}\n\n{{format_instructions}}"),
         ),
         ("placeholder", "{chat_history}"),
         ("human", "{query}"),

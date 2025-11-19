@@ -14,5 +14,9 @@
   {
     "category": "Invoices",
     "description": "Emails from suppliers where the supplier sends his invoice for products or services delivered."
+  },
+  {
+    "category": "ERP Requests",
+    "description": "Emails from internal employees where they request actions to be performed in the ERP system, such as creating or changing articles, customers, suppliers, prices, etc."
   }
 ]

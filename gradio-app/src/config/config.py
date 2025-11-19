@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-"""Central application settings loaded from environment and .env files."""
-
 from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field
@@ -153,7 +151,7 @@ else:
     print("No .env file found; relying on process environment only")
 
 if __name__ == "__main__":
-    from rich import print
+    from rich import print  # type: ignore
 
     print(settings)
 
