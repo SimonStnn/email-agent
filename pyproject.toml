@@ -1,0 +1,34 @@
+[tool.black]
+line-length = 120
+target-version = ['py312']
+exclude = '''
+/(
+  \.
+  | build
+  | dist
+  | migrations
+  | __pycache__
+)
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 120
+known_first_party = ["src"]
+default_section = "THIRDPARTY"
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true
+ignore_missing_imports = true
+strict = false
+
+[tool.ruff]
+# Enable unused import removal and general linting
+line-length = 120
+select = ["F", "E", "I", "T", "B", "A"]                          # F: pyflakes, I: isort, etc.
+ignore = ["A004", "E203", "E501", "T201"]                        # Compatible with Black
+exclude = ["build", "dist", "__pycache__", ".git", "migrations"]
+
+[tool.uv.workspace]
+members = ["mcp", "gradio"]
