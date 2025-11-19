@@ -2,7 +2,7 @@ import asyncio
 from pathlib import Path
 from typing import Any
 
-from const import CERM_MCP_SERVER_NAME
+from const import CERM_AZURE_SERVER_NAME, CERM_MCP_SERVER_NAME
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain_core.output_parsers import PydanticOutputParser
@@ -62,8 +62,11 @@ prompt = ChatPromptTemplate.from_messages(
 
 
 async def load_tools() -> list[BaseTool]:
+    tools: list[BaseTool] = []
     async with mcp_client.session(CERM_MCP_SERVER_NAME) as session:
-        tools = await load_mcp_tools(session)
+        tools.extend(await load_mcp_tools(session))
+    async with mcp_client.session(CERM_AZURE_SERVER_NAME) as session:
+        tools.extend(await load_mcp_tools(session))
     return tools
 
 
@@ -103,7 +106,7 @@ async def init_agent() -> None:
         try:
             _mcp_session = await session_ctx_local.__aenter__()
             # load tools while session is active
-            tools_local = await load_mcp_tools(_mcp_session)
+            tools_local = await load_tools()
             # store the tools for use by the agent
             tools = tools_local
             # Wait until shutdown is signaled

@@ -5,12 +5,10 @@ import json
 from typing import Any
 
 import gradio as gr
-from agent import agent, init_agent, invoke_agent, mcp_client
-from const import CERM_MCP_SERVER_NAME
+from agent import agent, init_agent, invoke_agent, load_tools, mcp_client
 from gradio import ChatMessage
 from gradio.components.chatbot import MetadataDict
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
-from langchain_mcp_adapters.tools import load_mcp_tools
 
 
 def _extract_content(value: Any) -> str:
@@ -162,8 +160,7 @@ def render_mcp_client_info() -> None:
 async def render_tools() -> None:
     """Generate markdown list of available tools."""
     # Try fetching tools from MCP server; fall back to any local `tools` list if present
-    async with mcp_client.session(CERM_MCP_SERVER_NAME) as session:
-        tools = await load_mcp_tools(session)
+    tools = await load_tools()
 
     if not tools:
         gr.Label("No tools available.")
@@ -171,7 +168,7 @@ async def render_tools() -> None:
 
     gr.Markdown("## Available Tools")
     for tool in tools:
-        with gr.Accordion(tool.name, open=True):
+        with gr.Accordion(tool.name, open=False):
             gr.Markdown(tool.description)
 
 

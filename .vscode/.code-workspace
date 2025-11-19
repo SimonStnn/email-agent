@@ -9,6 +9,10 @@
 			"path": "../mcp-server"
 		},
 		{
+			"name": "m365-mcp",
+			"path": "../m365-mcp"
+		},
+		{
 			"name": "Gradio App",
 			"path": "../gradio-app"
 		},
@@ -17,6 +21,7 @@
 		"files.exclude": {
       "mcp-server/": true,
       "gradio-app/": true,
+      "m365-mcp/": true,
     },
 	}
 }
