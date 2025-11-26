@@ -154,22 +154,67 @@ async def respond(
 
 def render_mcp_client_info() -> None:
     """Display MCP client connection info."""
-    gr.Markdown(f"**MCP Server:** Connected to `{mcp_client.connections.keys()}`")
+    connections = mcp_client.connections
+    # keys = connections.keys()
+
+    gr.Markdown("## MCP Client Connections")
+
+    for key, conn in connections.items():
+        name = key.replace("_", " ").title()
+        with gr.Accordion(name, open=False):
+            if isinstance(conn, dict):
+                transport = conn.get("transport", "unknown")
+                url = conn.get("url", "unknown")
+            else:
+                transport = getattr(conn, "transport", "unknown")
+                url = getattr(conn, "url", "unknown")
+            transport = transport.replace("_", " ").title()
+            url = f"<{url}>"
+
+            gr.Markdown(f"- **transport:** {transport}\n- **URL:** {url}")
 
 
-async def render_tools() -> None:
-    """Generate markdown list of available tools."""
-    # Try fetching tools from MCP server; fall back to any local `tools` list if present
-    tools = await load_tools()
+def render_tools() -> None:
+    """Generate markdown list of available tools.
 
-    if not tools:
-        gr.Label("No tools available.")
+    Uses `asyncio.run(load_tools())` so it can be called during the Gradio
+    layout construction (synchronously).
+    """
+    try:
+        tools = asyncio.run(load_tools())
+    except Exception as exc:
+        gr.Markdown(f"**Tools:** Error loading tools: {exc}")
         return
 
-    gr.Markdown("## Available Tools")
+    if not tools:
+        gr.Markdown("**Available Tools:** _None_")
+        return
+
+    gr.Markdown(f"## Available Tools ({len(tools)})")
     for tool in tools:
-        with gr.Accordion(tool.name, open=False):
-            gr.Markdown(tool.description)
+        title = getattr(tool, "name", "Unnamed tool")
+        description = getattr(tool, "description", "_No description available._")
+        with gr.Accordion(title, open=False):
+            gr.Markdown(f"**Description:** {description}")
+
+            # Show sample args if available
+            args = getattr(tool, "args", None) or getattr(tool, "arguments", None)
+            if args:
+                try:
+                    sample = json.dumps(args, ensure_ascii=False, indent=2)
+                except Exception:
+                    sample = str(args)
+                gr.Markdown("**Sample args:**")
+                gr.Markdown(f"```json\n{sample}\n```")
+
+            # Additional flags / metadata
+            meta = []
+            if getattr(tool, "return_direct", False):
+                meta.append("Returns direct")
+            if getattr(tool, "is_streamable", False):
+                meta.append("Streamable")
+            if meta:
+                gr.Markdown("**Info:** " + ", ".join(meta))
 
 
 with gr.Blocks(title="Email Agent") as demo:
@@ -179,7 +224,7 @@ with gr.Blocks(title="Email Agent") as demo:
             gr.Markdown("---")
             render_mcp_client_info()
             gr.Markdown("---")
-            asyncio.run(render_tools())
+            render_tools()
 
         with gr.Column(scale=3):
             conversation_state = gr.State(None)

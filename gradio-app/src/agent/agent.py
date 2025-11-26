@@ -102,11 +102,14 @@ async def init_agent() -> None:
     async def session_runner():
         global _mcp_session, _mcp_session_ctx, tools
         session_ctx_local = mcp_client.session(CERM_MCP_SERVER_NAME)
+        session_ctx_m365 = mcp_client.session(CERM_AZURE_SERVER_NAME)
         _mcp_session_ctx = session_ctx_local
         try:
             _mcp_session = await session_ctx_local.__aenter__()
+            _mcp_m365_session = await session_ctx_m365.__aenter__()
             # load tools while session is active
-            tools_local = await load_tools()
+            tools_local = await load_mcp_tools(_mcp_session)
+            tools_local += await load_mcp_tools(_mcp_m365_session)
             # store the tools for use by the agent
             tools = tools_local
             # Wait until shutdown is signaled
