@@ -6,5 +6,15 @@
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
 		"ghcr.io/va-h/devcontainers-features/uv:1": {}
 	},
-	"remoteUser": "root"
+	"remoteUser": "root",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.debugpy",
+				"ms-python.vscode-python-envs",
+				"ms-azure-devops.azure-pipelines"
+			]
+		}
+	}
 }
