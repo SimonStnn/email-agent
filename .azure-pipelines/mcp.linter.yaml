@@ -1,0 +1,41 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - mcp-server
+
+pool: IaC
+
+variables:
+  projectDir: 'mcp-server'
+  PRE_COMMIT_HOME: $(Pipeline.Workspace)/.cache/pre-commit
+
+steps:
+  - script: |
+      pwd
+      ls -la
+    displayName: Install uv
+
+  - script: |
+      echo "Setting up environment with uv..."
+      curl -LsSf https://astral.sh/uv/install.sh | sh
+      uv --version
+
+      echo "CWD: $(pwd)"
+
+      echo "Installing Python version from .python-version..."
+      uv python install $(cat .python-version)
+
+      echo "Syncing dependencies..."
+      uv sync --all-extras --dev
+    workingDirectory: $(projectDir)
+    displayName: Setup Environment
+
+  - script: |
+      uv run pre-commit run --all-files --show-diff-on-failure
+    workingDirectory: $(projectDir)
+    env:
+      PRE_COMMIT_HOME: $(PRE_COMMIT_HOME)
+    displayName: Run Linters

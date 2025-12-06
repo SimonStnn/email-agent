@@ -192,7 +192,7 @@ def render_tools() -> None:
 
     gr.Markdown(f"## Available Tools ({len(tools)})")
     for tool in tools:
-        title = getattr(tool, "name", "Unnamed tool")
+        title = getattr(tool, "name", "Unnamed tool").replace("_", " ").title()
         description = getattr(tool, "description", "_No description available._")
         with gr.Accordion(title, open=False):
             gr.Markdown(f"**Description:** {description}")
