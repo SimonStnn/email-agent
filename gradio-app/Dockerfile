@@ -8,6 +8,6 @@ RUN pip install --no-cache-dir -q -e .
 
 COPY . .
 
-EXPOSE 8000
+EXPOSE 7860
 
-CMD ["python", "src/start_mcp.py"]
+CMD ["python", "src/start_gradio.py"]
