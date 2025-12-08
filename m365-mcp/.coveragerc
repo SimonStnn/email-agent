@@ -1,0 +1,28 @@
+[run]
+branch = True
+source = 
+    src/m365_mcp
+omit =
+    */__init__.py
+    */tests/*
+    */migrations/*
+    */conftest.py
+    */test_*.py
+
+[report]
+show_missing = True
+skip_empty = True
+precision = 2
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if TYPE_CHECKING:
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml

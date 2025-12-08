@@ -1,0 +1,544 @@
+{
+  "panelChats": [],
+  "inlineChats": [],
+  "schemaVersion": "1.0",
+  "deletedChats": {
+    "deletedMessageIDs": [],
+    "deletedPanelChatIDs": []
+  },
+  "kv_store": {
+    "unique_matched_lines_count": 0,
+    "total_repo_line_count": 26546,
+    "best_prompt_response": null,
+    "file_statistics": [
+      {
+        "file": ".claude/settings.local.json",
+        "total_lines": 31,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": ".cursorindexingignore",
+        "total_lines": 4,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": ".env.example",
+        "total_lines": 126,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": ".env.http.example",
+        "total_lines": 59,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": ".env.stdio.example",
+        "total_lines": 32,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": ".projects/steering/mcp-server.md",
+        "total_lines": 525,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": ".projects/steering/product.md",
+        "total_lines": 46,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": ".projects/steering/python.md",
+        "total_lines": 263,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": ".projects/steering/structure.md",
+        "total_lines": 155,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": ".projects/steering/tech.md",
+        "total_lines": 160,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": ".projects/steering/tool-names.md",
+        "total_lines": 70,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": ".python-version",
+        "total_lines": 2,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "AGENTS.md",
+        "total_lines": 47,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "CHANGELOG.md",
+        "total_lines": 352,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "CLAUDE.md",
+        "total_lines": 126,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "ENV_FILE_USAGE.md",
+        "total_lines": 184,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "FILETREE.md",
+        "total_lines": 396,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "LAST_2_GIT_COMMITS_SUMMARY.md",
+        "total_lines": 318,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "MONITORING.md",
+        "total_lines": 459,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "ORIGIN_MASTER_9_COMMITS_SUMMARY.md",
+        "total_lines": 500,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "QUICKSTART.md",
+        "total_lines": 660,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "README.md",
+        "total_lines": 330,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "SECURITY.md",
+        "total_lines": 518,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "authenticate.py",
+        "total_lines": 113,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "cache_update/01-overview.md",
+        "total_lines": 220,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "cache_update/02-database-schema.md",
+        "total_lines": 106,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "cache_update/03-cache-strategy.md",
+        "total_lines": 162,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "cache_update/04-implementation.md",
+        "total_lines": 227,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "cache_update/05-tool-integration.md",
+        "total_lines": 214,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "cache_update/06-task-queue.md",
+        "total_lines": 295,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "cache_update/07-implementation-plan.md",
+        "total_lines": 532,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "cache_update/08-cache-warming.md",
+        "total_lines": 377,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "cache_update/README.md",
+        "total_lines": 148,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "change-name-must-do.md",
+        "total_lines": 118,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "example_mcp.json",
+        "total_lines": 69,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "monitor_mcp_server.sh",
+        "total_lines": 494,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "pyproject.toml",
+        "total_lines": 51,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "pyrightconfig.json",
+        "total_lines": 6,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/__init__.py",
+        "total_lines": 3,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/auth.py",
+        "total_lines": 154,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/graph.py",
+        "total_lines": 331,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/health_check.py",
+        "total_lines": 297,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/logging_config.py",
+        "total_lines": 245,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/mcp_instance.py",
+        "total_lines": 14,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/server.py",
+        "total_lines": 308,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/tools.py",
+        "total_lines": 30,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/tools/__init__.py",
+        "total_lines": 165,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/tools/account.py",
+        "total_lines": 158,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/tools/calendar.py",
+        "total_lines": 574,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/tools/contact.py",
+        "total_lines": 389,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/tools/email.py",
+        "total_lines": 975,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/tools/email_folders.py",
+        "total_lines": 186,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/tools/email_rules.py",
+        "total_lines": 791,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/tools/file.py",
+        "total_lines": 453,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/tools/folder.py",
+        "total_lines": 244,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/tools/search.py",
+        "total_lines": 352,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/tools/server.py",
+        "total_lines": 42,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "src/m365_mcp/validators.py",
+        "total_lines": 915,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "start_mcp_with_monitoring.sh",
+        "total_lines": 310,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "test_mcp_endpoint.sh",
+        "total_lines": 37,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/PORT_8000_CLEANUP.md",
+        "total_lines": 111,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/__init__.py",
+        "total_lines": 1,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/conftest.py",
+        "total_lines": 235,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/test_account_validation.py",
+        "total_lines": 166,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/test_calendar_validation.py",
+        "total_lines": 265,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/test_contact_validation.py",
+        "total_lines": 82,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/test_email_rules_validation.py",
+        "total_lines": 83,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/test_email_validation.py",
+        "total_lines": 247,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/test_file_get.py",
+        "total_lines": 184,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/test_folder_validation.py",
+        "total_lines": 59,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/test_integration.py",
+        "total_lines": 1168,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/test_port_cleanup.py",
+        "total_lines": 25,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/test_search_validation.py",
+        "total_lines": 171,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/test_tool_confirmation.py",
+        "total_lines": 200,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "tests/test_validators.py",
+        "total_lines": 74,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "todo/CRITICAL_PATH_TAKSLIST.md",
+        "total_lines": 242,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "todo/CRITICAL_PATH_TASKLIST_REVIEW.md",
+        "total_lines": 582,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "todo/DOCUMENTATION_COMPLIANCE_TAKSLIST.md",
+        "total_lines": 784,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "todo/PHASE1_TAKSLIST.md",
+        "total_lines": 280,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "todo/PHASE1_TAKSLIST_REVIEW.md",
+        "total_lines": 503,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "todo/PHASE2_TAKSLIST.md",
+        "total_lines": 334,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "todo/PHASE2_TASKLIST_REVIEW.md",
+        "total_lines": 828,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "todo/PHASE3_TAKSLIST.md",
+        "total_lines": 387,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "todo/PHASE3_TASKLIST_REVIEW.md",
+        "total_lines": 878,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "todo/PHASE4_TAKSLIST.md",
+        "total_lines": 373,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "todo/PHASE4_TASKLIST_REVIEW.md",
+        "total_lines": 842,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "todo/TESTING_TAKSLIST.md",
+        "total_lines": 621,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      },
+      {
+        "file": "uv.lock",
+        "total_lines": 1353,
+        "ai_generated_lines": 0,
+        "ai_generated_percentage": 0
+      }
+    ]
+  }
+}

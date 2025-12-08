@@ -5,11 +5,11 @@ client = MultiServerMCPClient(
     {
         CERM_MCP_SERVER_NAME: {
             "transport": "streamable_http",
-            "url": "http://127.0.0.1:8000/mcp",
+            "url": "http://cerm-mcp:8000/mcp",
         },
         CERM_AZURE_SERVER_NAME: {
             "transport": "streamable_http",
-            "url": "http://127.0.0.1:8400/mcp",
+            "url": "http://m365-mcp:8400/mcp",
         },
     },
 )

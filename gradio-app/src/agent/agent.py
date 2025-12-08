@@ -2,7 +2,6 @@ import asyncio
 from pathlib import Path
 from typing import Any
 
-from const import CERM_AZURE_SERVER_NAME, CERM_MCP_SERVER_NAME
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain_core.output_parsers import PydanticOutputParser
@@ -63,10 +62,14 @@ prompt = ChatPromptTemplate.from_messages(
 
 async def load_tools() -> list[BaseTool]:
     tools: list[BaseTool] = []
-    async with mcp_client.session(CERM_MCP_SERVER_NAME) as session:
-        tools.extend(await load_mcp_tools(session))
-    async with mcp_client.session(CERM_AZURE_SERVER_NAME) as session:
-        tools.extend(await load_mcp_tools(session))
+
+    for server_name in mcp_client.connections:
+        try:
+            async with mcp_client.session(server_name) as session:
+                tools.extend(await load_mcp_tools(session))
+        except Exception as e:
+            print(f"Warning: Failed to load tools from {server_name}: {e}")
+
     return tools
 
 
@@ -101,15 +104,22 @@ async def init_agent() -> None:
 
     async def session_runner():
         global _mcp_session, _mcp_session_ctx, tools
-        session_ctx_local = mcp_client.session(CERM_MCP_SERVER_NAME)
-        session_ctx_m365 = mcp_client.session(CERM_AZURE_SERVER_NAME)
-        _mcp_session_ctx = session_ctx_local
+        session_ctxs = {server_name: mcp_client.session(
+            server_name) for server_name in mcp_client.connections}
+        sessions = {}
+        _mcp_session_ctx = session_ctxs
         try:
-            _mcp_session = await session_ctx_local.__aenter__()
-            _mcp_m365_session = await session_ctx_m365.__aenter__()
+            for server_name, ctx in session_ctxs.items():
+                sessions[server_name] = await ctx.__aenter__()
+            _mcp_session = sessions
             # load tools while session is active
-            tools_local = await load_mcp_tools(_mcp_session)
-            tools_local += await load_mcp_tools(_mcp_m365_session)
+            tools_local = []
+            for server_name, session in sessions.items():
+                try:
+                    tools_local.extend(await load_mcp_tools(session))
+                except Exception as e:
+                    print(
+                        f"Warning: Failed to load tools from {server_name}: {e}")
             # store the tools for use by the agent
             tools = tools_local
             # Wait until shutdown is signaled
@@ -117,13 +127,14 @@ async def init_agent() -> None:
                 await _mcp_session_stop.wait()
         finally:
             # ensure __aexit__ is called in the same task
-            await session_ctx_local.__aexit__(None, None, None)
+            for ctx in session_ctxs.values():
+                await ctx.__aexit__(None, None, None)
 
     _mcp_session_task = asyncio.create_task(session_runner())
 
     # Give the runner a moment to enter and populate the session to avoid
     # racing when init_agent is awaited followed by immediate use.
-    while _mcp_session is None:
+    while not _mcp_session:
         await asyncio.sleep(0.01)
     # Wait for the session runner to load tools
     while not tools:
