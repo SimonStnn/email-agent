@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from typing import Any
 
 import gradio as gr
 from agent import agent, init_agent, invoke_agent, load_tools, mcp_client
 from gradio import ChatMessage
 from gradio.components.chatbot import MetadataDict
-from langchain_mcp_adapters.tools import load_mcp_tools
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
+from langchain_mcp_adapters.tools import load_mcp_tools
 
 
 def _extract_content(value: Any) -> str:
@@ -64,8 +65,7 @@ def _format_history_for_agent(history: list[ChatMessage]) -> list[BaseMessage]:
 
 def _format_tool_metadata(tool_call: dict[str, Any], tool_response: ToolMessage | None) -> tuple[str, MetadataDict]:
     tool_name = tool_call.get("name", "unknown")
-    metadata: MetadataDict = {
-        "title": f"🛠️ Used `{tool_name}`", "status": "done"}
+    metadata: MetadataDict = {"title": f"🛠️ Used `{tool_name}`", "status": "done"}
 
     args = tool_call.get("args") or tool_call.get("arguments")
     if args:
@@ -78,8 +78,7 @@ def _format_tool_metadata(tool_call: dict[str, Any], tool_response: ToolMessage 
                 log = str(args)
         metadata["log"] = log[:50] + ("..." if len(log) > 50 else "")
 
-    content = str(
-        tool_response.content) if tool_response else f"Called `{tool_name}`."
+    content = str(tool_response.content) if tool_response else f"Called `{tool_name}`."
 
     return content, metadata
 
@@ -91,15 +90,13 @@ async def respond(
 ) -> tuple[list[ChatMessage] | ChatMessage, list[BaseMessage]]:
     """Async Gradio callback to forward the conversation to the LangChain agent."""
 
-    user_text = _extract_content(message.content) if isinstance(
-        message, ChatMessage) else str(message)
+    user_text = _extract_content(message.content) if isinstance(message, ChatMessage) else str(message)
 
     # Reset stored state when starting a new conversation
     if not history:
         conversation_state = []
 
-    messages: list[BaseMessage] = list(
-        conversation_state or _format_history_for_agent(history))
+    messages: list[BaseMessage] = list(conversation_state or _format_history_for_agent(history))
     messages.append(HumanMessage(content=user_text))
     base_length: int = len(messages)
 
@@ -120,11 +117,9 @@ async def respond(
             messages.append(AIMessage(content=response_text))
 
         # Get messages since last user input
-        recent_messages = messages[base_length:] if len(
-            messages) >= base_length else []
+        recent_messages = messages[base_length:] if len(messages) >= base_length else []
         for i, msg in enumerate(recent_messages):
-            tool_calls: list[dict[str, Any]] | None = getattr(
-                msg, "tool_calls", None)
+            tool_calls: list[dict[str, Any]] | None = getattr(msg, "tool_calls", None)
             if not tool_calls:
                 continue
 
@@ -133,13 +128,12 @@ async def respond(
                 tool_response = next(
                     (
                         m
-                        for m in recent_messages[i + 1:]
+                        for m in recent_messages[i + 1 :]
                         if isinstance(m, ToolMessage) and getattr(m, "tool_call_id", None) == call_id
                     ),
                     None,
                 )
-                content, metadata = _format_tool_metadata(
-                    tool_call, tool_response)
+                content, metadata = _format_tool_metadata(tool_call, tool_response)
                 tool_messages.append(
                     ChatMessage(
                         role="assistant",
@@ -156,8 +150,7 @@ async def respond(
 
         return final_message, messages
     except Exception as exc:
-        error_message = ChatMessage(
-            role="assistant", content=f"⚠️ Agent error: {exc}")
+        error_message = ChatMessage(role="assistant", content=f"⚠️ Agent error: {exc}")
         return error_message, messages
 
 
@@ -169,7 +162,7 @@ def render_mcp_client_info() -> None:
     gr.Markdown("## MCP Client Connections")
 
     for key, conn in connections.items():
-        name = key.replace("_", " ").title()
+        name = re.sub(r"[_\-:,]", " ", key).title()
         with gr.Accordion(name, open=False):
             if isinstance(conn, dict):
                 transport = conn.get("transport", "unknown")
@@ -177,7 +170,7 @@ def render_mcp_client_info() -> None:
             else:
                 transport = getattr(conn, "transport", "unknown")
                 url = getattr(conn, "url", "unknown")
-            transport = transport.replace("_", " ").title()
+            transport = re.sub(r"[_\-:,]", " ", transport).title()
             url = f"<{url}>"
 
             # Try to load tools from this specific server
@@ -187,8 +180,7 @@ def render_mcp_client_info() -> None:
             except Exception:
                 tool_count = 0
 
-            gr.Markdown(
-                f"- **transport:** {transport}\n- **URL:** {url}\n- **Tools loaded:** {tool_count}")
+            gr.Markdown(f"- **transport:** {transport}\n- **URL:** {url}\n- **Tools loaded:** {tool_count}")
 
 
 async def _count_tools_for_server(server_key: str) -> int:
@@ -220,14 +212,12 @@ def render_tools() -> None:
     gr.Markdown(f"## Available Tools ({len(tools)})")
     for tool in tools:
         title = getattr(tool, "name", "Unnamed tool").replace("_", " ").title()
-        description = getattr(tool, "description",
-                              "_No description available._")
+        description = getattr(tool, "description", "_No description available._")
         with gr.Accordion(title, open=False):
             gr.Markdown(f"**Description:** {description}")
 
             # Show sample args if available
-            args = getattr(tool, "args", None) or getattr(
-                tool, "arguments", None)
+            args = getattr(tool, "args", None) or getattr(tool, "arguments", None)
             if args:
                 try:
                     sample = json.dumps(args, ensure_ascii=False, indent=2)

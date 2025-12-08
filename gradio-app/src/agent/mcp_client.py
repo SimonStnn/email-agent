@@ -1,15 +1,24 @@
-from const import CERM_AZURE_SERVER_NAME, CERM_MCP_SERVER_NAME
+import os
+from urllib.parse import urlparse
+
+import dotenv
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
-client = MultiServerMCPClient(
-    {
-        CERM_MCP_SERVER_NAME: {
-            "transport": "streamable_http",
-            "url": "http://cerm-mcp:8000/mcp",
-        },
-        CERM_AZURE_SERVER_NAME: {
-            "transport": "streamable_http",
-            "url": "http://m365-mcp:8400/mcp",
-        },
-    },
-)
+dotenv.load_dotenv(verbose=True)
+
+URLS = os.getenv("AGENT_MCP_URLS")
+
+if not URLS:
+    raise ValueError("AGENT_MCP_URLS environment variable is not set.")
+
+_connections = {}
+for i, url in enumerate(URLS.split(",")):
+    parsed_uri = urlparse(url.strip())
+    result = "{uri.netloc}".format(uri=parsed_uri)
+    name = f"{i + 1:0>2}_{result}"
+    _connections[name] = {
+        "url": url,
+        "transport": "streamable_http",
+    }
+
+client = MultiServerMCPClient(connections=_connections)
