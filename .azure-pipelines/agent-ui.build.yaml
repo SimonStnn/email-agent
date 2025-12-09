@@ -1,0 +1,65 @@
+trigger:
+  tags:
+    include:
+      - agent-ui-v*
+
+pool: IaC
+
+variables:
+  acrName: 'email-agent-acr'
+  rgName: 'email-agent-resource'
+  clientId: '8221c635-cba7-4838-a593-48ee62e681c5'
+  subscription: 'a6595f43-9c2b-4a18-8cb3-da0894842335'
+  tenantId: '503253c1-d047-4d55-a5e7-eb6b0fc34802'
+  service: 'agent-ui'
+  context: 'gradio-app'
+
+steps:
+  - checkout: self
+
+  - script: |
+      # Login to Azure
+      az login --service-principal -u $(clientId) -p $CLIENTSECRET --tenant $(tenantId)
+
+      # Set subscription
+      az account set --subscription $(subscription)
+
+      # Create resource group if not exists
+      az group create --name $(rgName) --location eastus --only-show-errors || echo "Resource group already exists"
+
+      # Create ACR if not exists
+      az acr create --name $(acrName) --resource-group $(rgName) --sku Basic --only-show-errors || echo "ACR already exists"
+    displayName: 'Create Resource Group and ACR if not exists'
+    env:
+      CLIENTSECRET: $(clientSecret)
+
+  - script: |
+      # Parse tag to get version
+      TAG_NAME=$(Build.SourceBranchName)
+      if [[ $TAG_NAME =~ ^agent-ui-v(.+)$ ]]; then
+        VERSION=${BASH_REMATCH[1]}
+        echo "Version: $VERSION"
+      else
+        echo "Invalid tag format"
+        exit 1
+      fi
+
+      # Build image
+      docker build -t $(service):$VERSION $(context)
+
+      # Login to ACR
+      az acr login --name $(acrName)
+
+      # Tag and push
+      IMAGE_NAME=$(acrName).azurecr.io/$(service)
+
+      docker tag $(service):$VERSION $IMAGE_NAME:latest
+      docker tag $(service):$VERSION $IMAGE_NAME:$VERSION
+      docker tag $(service):$VERSION $IMAGE_NAME:${VERSION%.*}  # x.x
+      docker tag $(service):$VERSION $IMAGE_NAME:${VERSION%%.*}  # x
+
+      docker push $IMAGE_NAME:latest
+      docker push $IMAGE_NAME:$VERSION
+      docker push $IMAGE_NAME:${VERSION%.*}
+      docker push $IMAGE_NAME:${VERSION%%.*}
+    displayName: 'Build and Push Image'

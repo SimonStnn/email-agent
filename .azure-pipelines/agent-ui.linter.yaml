@@ -1,0 +1,58 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - gradio-app/**
+
+pool: IaC
+
+variables:
+  projectDir: 'gradio-app'
+  PRE_COMMIT_HOME: $(Pipeline.Workspace)/.cache/pre-commit
+
+steps:
+  - checkout: self
+    persistCredentials: true
+
+  - script: |
+      pwd
+      ls -la
+    displayName: Debug
+
+  - script: |
+      echo "Setting up environment with uv..."
+      curl -LsSf https://astral.sh/uv/install.sh | sh
+      uv --version
+
+      echo "Installing Python version from .python-version..."
+      uv python install $(cat .python-version)
+
+      echo "Syncing dependencies..."
+      uv sync --all-extras --dev
+    workingDirectory: $(projectDir)
+    displayName: Setup Environment
+
+  - script: |
+      uv run pre-commit run --all-files --show-diff-on-failure
+    workingDirectory: $(projectDir)
+    env:
+      PRE_COMMIT_HOME: $(PRE_COMMIT_HOME)
+    displayName: Run Linters
+
+  - script: |
+      # Read version from pyproject.toml
+      VERSION=$(grep '^version =' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+
+      echo "Version: agent-ui=$VERSION"
+
+      # Configure git
+      git config --global user.email "azure-pipelines@azure.com"
+      git config --global user.name "Azure Pipelines"
+
+      # Create and push tag
+      git tag "agent-ui-v$VERSION"
+      git push --tags
+    workingDirectory: $(projectDir)
+    displayName: Push Version Tag

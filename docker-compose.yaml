@@ -1,22 +1,19 @@
-name: cerm-mcp
+name: email-agent
 
 services:
   cerm-mcp:
-    container_name: cerm-mcp
     build:
       context: ./mcp-server
     ports:
       - "8000:8000"
 
   m365-mcp:
-    container_name: m365-mcp
     build:
       context: ./m365-mcp
     ports:
       - "8400:8400"
 
-  cerm-agent-ui:
-    container_name: cerm-agent-ui
+  email-agent-ui:
     build:
       context: ./gradio-app
     ports:

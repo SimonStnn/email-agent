@@ -4,7 +4,7 @@ trigger:
       - main
   paths:
     include:
-      - mcp-server
+      - mcp-server/**
 
 pool: IaC
 
@@ -13,17 +13,18 @@ variables:
   PRE_COMMIT_HOME: $(Pipeline.Workspace)/.cache/pre-commit
 
 steps:
+  - checkout: self
+    persistCredentials: true
+
   - script: |
       pwd
       ls -la
-    displayName: Install uv
+    displayName: Debug
 
   - script: |
       echo "Setting up environment with uv..."
       curl -LsSf https://astral.sh/uv/install.sh | sh
       uv --version
-
-      echo "CWD: $(pwd)"
 
       echo "Installing Python version from .python-version..."
       uv python install $(cat .python-version)
@@ -39,3 +40,19 @@ steps:
     env:
       PRE_COMMIT_HOME: $(PRE_COMMIT_HOME)
     displayName: Run Linters
+
+  - script: |
+      # Read version from pyproject.toml
+      VERSION=$(grep '^version =' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+
+      echo "Version: cerm-mcp=$VERSION"
+
+      # Configure git
+      git config --global user.email "azure-pipelines@azure.com"
+      git config --global user.name "Azure Pipelines"
+
+      # Create and push tag
+      git tag "cerm-mcp-v$VERSION"
+      git push --tags
+    workingDirectory: $(projectDir)
+    displayName: Push Version Tag
