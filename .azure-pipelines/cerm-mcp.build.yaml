@@ -6,11 +6,9 @@ trigger:
 pool: IaC
 
 variables:
+  group: 'resource-access'
   acrName: 'email-agent-acr'
   rgName: 'email-agent-resource'
-  clientId: '8221c635-cba7-4838-a593-48ee62e681c5'
-  subscription: 'a6595f43-9c2b-4a18-8cb3-da0894842335'
-  tenantId: '503253c1-d047-4d55-a5e7-eb6b0fc34802'
   service: 'cerm-mcp'
   context: 'mcp-server'
 
