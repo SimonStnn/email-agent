@@ -8,7 +8,7 @@ pool: IaC
 variables:
   group: 'resource-access'
   acrName: 'emailagentacr'
-  rgName: 'email-agent-resource'
+  rgName: 'POC-MCP'
   service: 'cerm-mcp'
   context: 'mcp-server'
 
