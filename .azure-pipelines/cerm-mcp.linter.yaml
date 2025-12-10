@@ -56,6 +56,7 @@ steps:
       echo "Version: cerm-mcp=$VERSION"
 
       # Configure git
+      cd ..
       git config --global user.email "azure-pipelines@azure.com"
       git config --global user.name "Azure Pipelines"
 
