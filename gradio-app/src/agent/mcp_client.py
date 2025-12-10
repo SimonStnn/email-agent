@@ -16,6 +16,6 @@ for i, url in enumerate(URLS.split(",")):
     parsed_uri = urlparse(url.strip())
     result = "{uri.netloc}".format(uri=parsed_uri)
     name = f"{i + 1:0>2}_{result}"
-    _connections[name] = StreamableHttpConnection(url=url)
+    _connections[name] = StreamableHttpConnection(url=url, transport="streamable_http")
 
 client = MultiServerMCPClient(connections=_connections)
