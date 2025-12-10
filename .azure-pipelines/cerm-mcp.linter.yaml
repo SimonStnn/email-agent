@@ -57,6 +57,7 @@ steps:
 
       # Configure git
       cd ..
+      export HOME=/tmp
       git config --global user.email "azure-pipelines@azure.com"
       git config --global user.name "Azure Pipelines"
 

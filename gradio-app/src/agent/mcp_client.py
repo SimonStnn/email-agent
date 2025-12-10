@@ -1,8 +1,15 @@
 import os
+from typing import cast
 from urllib.parse import urlparse
 
 import dotenv
-from langchain_mcp_adapters.client import MultiServerMCPClient, StreamableHttpConnection
+from langchain_mcp_adapters.client import (
+    MultiServerMCPClient,
+    SSEConnection,
+    StdioConnection,
+    StreamableHttpConnection,
+    WebsocketConnection,
+)
 
 dotenv.load_dotenv(verbose=True)
 
@@ -18,4 +25,8 @@ for i, url in enumerate(URLS.split(",")):
     name = f"{i + 1:0>2}_{result}"
     _connections[name] = StreamableHttpConnection(url=url, transport="streamable_http")
 
-client = MultiServerMCPClient(connections=_connections)
+client = MultiServerMCPClient(
+    connections=cast(
+        dict[str, StdioConnection | SSEConnection | StreamableHttpConnection | WebsocketConnection], _connections
+    )
+)
