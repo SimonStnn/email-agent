@@ -35,11 +35,19 @@ steps:
     displayName: Setup Environment
 
   - script: |
-      uv run pre-commit run --show-diff-on-failure --files $(projectDir)/**/*
+      uv run ruff check . && uv run ruff format --check .
     workingDirectory: $(projectDir)
-    env:
-      PRE_COMMIT_HOME: $(PRE_COMMIT_HOME)
-    displayName: Run Linters
+    displayName: Run Ruff
+
+  - script: |
+      uv run mypy src/
+    workingDirectory: $(projectDir)
+    displayName: Run MyPy
+
+  - script: |
+      uv run isort --check-only .
+    workingDirectory: $(projectDir)
+    displayName: Run Isort
 
   - script: |
       # Read version from pyproject.toml
