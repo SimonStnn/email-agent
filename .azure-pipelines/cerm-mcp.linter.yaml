@@ -35,7 +35,7 @@ steps:
     displayName: Setup Environment
 
   - script: |
-      uv run pre-commit run --all-files --show-diff-on-failure
+      uv run pre-commit run --show-diff-on-failure --files $(projectDir)/**/*
     workingDirectory: $(projectDir)
     env:
       PRE_COMMIT_HOME: $(PRE_COMMIT_HOME)
