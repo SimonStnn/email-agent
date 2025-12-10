@@ -7,7 +7,7 @@ pool: IaC
 
 variables:
   group: 'resource-access'
-  acrName: 'email-agent-acr'
+  acrName: 'emailagentacr'
   rgName: 'email-agent-resource'
   service: 'm365-mcp'
   context: 'm365-mcp'
@@ -17,10 +17,10 @@ steps:
 
   - script: |
       # Login to Azure
-      az login --service-principal -u $(clientId) -p $CLIENTSECRET --tenant $(tenantId)
+      az login --service-principal -u $CLIENTID -p $CLIENTSECRET --tenant $TENANTID
 
       # Set subscription
-      az account set --subscription $(subscription)
+      az account set --subscription $SUBSCRIPTION
 
       # Create resource group if not exists
       az group create --name $(rgName) --location eastus --only-show-errors || echo "Resource group already exists"
@@ -29,7 +29,10 @@ steps:
       az acr create --name $(acrName) --resource-group $(rgName) --sku Basic --only-show-errors || echo "ACR already exists"
     displayName: 'Create Resource Group and ACR if not exists'
     env:
+      CLIENTID: $(clientId)
       CLIENTSECRET: $(clientSecret)
+      TENANTID: $(tenantId)
+      SUBSCRIPTION: $(subscription)
 
   - script: |
       # Parse tag to get version
