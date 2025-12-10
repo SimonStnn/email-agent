@@ -35,7 +35,7 @@ steps:
     displayName: Setup Environment
 
   - script: |
-      uv run ruff check . && uv run ruff format --check .
+      uv run ruff check . && uv run ruff format --check --diff .
     workingDirectory: $(projectDir)
     displayName: Run Ruff
 
