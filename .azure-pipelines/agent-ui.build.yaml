@@ -7,7 +7,7 @@ pool: IaC
 
 variables:
   group: 'resource-access'
-  acrName: 'emailagentacr'
+  acrName: 'pocmcpcerm'
   rgName: 'POC-MCP'
   service: 'agent-ui'
   context: 'gradio-app'
