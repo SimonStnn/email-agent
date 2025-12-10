@@ -10,16 +10,10 @@ pool: IaC
 
 variables:
   projectDir: 'mcp-server'
-  PRE_COMMIT_HOME: $(Pipeline.Workspace)/.cache/pre-commit
 
 steps:
   - checkout: self
     persistCredentials: true
-
-  - script: |
-      pwd
-      ls -la
-    displayName: Debug
 
   - script: |
       echo "Setting up environment with uv..."
@@ -35,16 +29,19 @@ steps:
     displayName: Setup Environment
 
   - script: |
-      uv run ruff check . && uv run ruff format --check --diff .
-    workingDirectory: $(projectDir)
-    displayName: Run Ruff
+      # Read version from pyproject.toml
+      VERSION=$(grep '^version =' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
 
-  - script: |
-      uv run mypy src/
-    workingDirectory: $(projectDir)
-    displayName: Run MyPy
+      echo "Version: cerm-mcp=$VERSION"
 
-  - script: |
-      uv run isort --check-only .
+      # Configure git
+      cd ..
+      export HOME=/tmp
+      git config --global user.email "azure-pipelines@azure.com"
+      git config --global user.name "Azure Pipelines"
+
+      # Create and push tag
+      git tag "cerm-mcp-v$VERSION"
+      git push --tags
     workingDirectory: $(projectDir)
-    displayName: Run Isort
+    displayName: Push Version Tag

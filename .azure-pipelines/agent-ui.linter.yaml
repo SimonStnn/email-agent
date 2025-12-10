@@ -48,21 +48,3 @@ steps:
       uv run isort --check-only .
     workingDirectory: $(projectDir)
     displayName: Run Isort
-
-  - script: |
-      # Read version from pyproject.toml
-      VERSION=$(grep '^version =' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
-
-      echo "Version: agent-ui=$VERSION"
-
-      # Configure git
-      cd ..
-      export HOME=/tmp
-      git config --global user.email "azure-pipelines@azure.com"
-      git config --global user.name "Azure Pipelines"
-
-      # Create and push tag
-      git tag "agent-ui-v$VERSION"
-      git push --tags
-    workingDirectory: $(projectDir)
-    displayName: Push Version Tag
