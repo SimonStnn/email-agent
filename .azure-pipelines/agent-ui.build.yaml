@@ -17,7 +17,7 @@ steps:
 
   - script: |
       # Login to Azure
-      az login --service-principal -u $CLIENTID -p $CLIENTSECRET --tenant $TENANTID
+      az login --service-principal -u $CLIENTID -p $CLIENTSECRET --tenant $TENANTID || exit 1
 
       # Set subscription
       az account set --subscription $SUBSCRIPTION
