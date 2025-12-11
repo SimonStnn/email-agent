@@ -17,10 +17,10 @@ steps:
 
   - bash: |
       # Login to Azure
-      az login --service-principal -u $(clientId) -p $(clientSecret) --tenant $(tenantId) || exit 1
+      az login --service-principal -u "$CLIENT_ID" -p "$CLIENT_SECRET" --tenant "$TENANT_ID" || exit 1
 
       # Set subscription
-      az account set --subscription $(subscription)
+      az account set --subscription "$SUBSCRIPTION"
 
       # Create resource group if not exists
       az group create --name $(rgName) --location eastus --only-show-errors || echo "Resource group already exists"
@@ -28,6 +28,11 @@ steps:
       # Create ACR if not exists
       az acr create --name $(acrName) --resource-group $(rgName) --sku Basic --only-show-errors || echo "ACR already exists"
     displayName: 'Create Resource Group and ACR if not exists'
+    env:
+      CLIENT_ID: $(clientId)
+      CLIENT_SECRET: $(clientSecret)
+      TENANT_ID: $(tenantId)
+      SUBSCRIPTION: $(subscription)
 
   - script: |
       # Parse tag to get version
