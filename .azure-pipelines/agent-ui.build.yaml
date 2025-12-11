@@ -17,10 +17,10 @@ steps:
 
   - bash: |
       echo "Checking if variables are set..."
-      if [ -z "$CLIENT_ID" ]; then echo "CLIENT_ID is empty"; exit 1; fi
-      if [ -z "$CLIENT_SECRET" ]; then echo "CLIENT_SECRET is empty"; exit 1; fi
-      if [ -z "$TENANT_ID" ]; then echo "TENANT_ID is empty"; exit 1; fi
-      if [ -z "$SUBSCRIPTION" ]; then echo "SUBSCRIPTION is empty"; exit 1; fi
+      if [ -z $(clientId)]; then echo "clientId is empty"; exit 1; fi
+      if [ -z $(clientSecret)]; then echo "clientSecret is empty"; exit 1; fi
+      if [ -z $(tenantId)]; then echo "tenantId is empty"; exit 1; fi
+      if [ -z $(subscription)]; then echo "subscription is empty"; exit 1; fi
 
       echo "All variables are set, proceeding with Azure login..."
 
