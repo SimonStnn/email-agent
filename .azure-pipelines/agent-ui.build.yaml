@@ -15,12 +15,12 @@ variables:
 steps:
   - checkout: self
 
-  - script: |
+  - bash: |
       # Login to Azure
-      az login --service-principal -u "$(clientId)" -p "$(clientSecret)" --tenant "$(tenantId)" || exit 1
+      az login --service-principal -u $(clientId) -p $(clientSecret) --tenant $(tenantId) || exit 1
 
       # Set subscription
-      az account set --subscription "$(subscription)"
+      az account set --subscription $(subscription)
 
       # Create resource group if not exists
       az group create --name $(rgName) --location eastus --only-show-errors || echo "Resource group already exists"
