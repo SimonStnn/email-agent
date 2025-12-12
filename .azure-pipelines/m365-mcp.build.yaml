@@ -15,6 +15,11 @@ variables:
     value: 'm365-mcp'
   - name: context
     value: 'm365-mcp'
+  - name: containerInstanceName
+    value: 'm365-mcp-aci'
+  - name: containerPort
+    value: '8000'
+
 steps:
   - checkout: self
 
@@ -67,3 +72,76 @@ steps:
       docker push $IMAGE_NAME:${VERSION%.*}
       docker push $IMAGE_NAME:${VERSION%%.*}
     displayName: 'Build and Push Image'
+
+  - bash: |
+      # Parse tag to get version
+      TAG_NAME=$(Build.SourceBranchName)
+      if [[ $TAG_NAME =~ ^m365-mcp-v(.+)$ ]]; then
+        VERSION=${BASH_REMATCH[1]}
+      else
+        echo "Invalid tag format"
+        exit 1
+      fi
+
+      # Enable admin user on ACR (required for ACI to pull images)
+      echo "Enabling ACR admin user..."
+      az acr update --name $(acrName) --admin-enabled true
+
+      # Get ACR credentials
+      ACR_USERNAME=$(az acr credential show --name $(acrName) --query username -o tsv)
+      ACR_PASSWORD=$(az acr credential show --name $(acrName) --query passwords[0].value -o tsv)
+
+      # Register Microsoft.ContainerInstance provider
+      echo "Registering Microsoft.ContainerInstance provider..."
+      az provider register --namespace Microsoft.ContainerInstance --wait
+
+      # Deploy to Azure Container Instances
+      IMAGE_NAME=$(acrName).azurecr.io/$(service):latest
+
+      echo "Deploying container instance: $(containerInstanceName)"
+      az container create \
+        --resource-group $(rgName) \
+        --name $(containerInstanceName) \
+        --image $IMAGE_NAME \
+        --registry-login-server $(acrName).azurecr.io \
+        --registry-username $ACR_USERNAME \
+        --registry-password $ACR_PASSWORD \
+        --dns-name-label $(containerInstanceName) \
+        --ports $(containerPort) \
+        --cpu 1 \
+        --memory 2 \
+        --restart-policy Always \
+        --location swedencentral \
+        --only-show-errors || {
+          echo "Container already exists, updating..."
+          az container delete \
+            --resource-group $(rgName) \
+            --name $(containerInstanceName) \
+            --yes
+
+          az container create \
+            --resource-group $(rgName) \
+            --name $(containerInstanceName) \
+            --image $IMAGE_NAME \
+            --registry-login-server $(acrName).azurecr.io \
+            --registry-username $ACR_USERNAME \
+            --registry-password $ACR_PASSWORD \
+            --dns-name-label $(containerInstanceName) \
+            --ports $(containerPort) \
+            --cpu 1 \
+            --memory 2 \
+            --restart-policy Always \
+            --location swedencentral
+        }
+
+      # Get the FQDN
+      FQDN=$(az container show \
+        --resource-group $(rgName) \
+        --name $(containerInstanceName) \
+        --query ipAddress.fqdn -o tsv)
+
+      echo "##############################################"
+      echo "Deployment completed successfully!"
+      echo "Service URL: http://$FQDN:$(containerPort)"
+      echo "##############################################"
+    displayName: 'Deploy to Azure Container Instances'
