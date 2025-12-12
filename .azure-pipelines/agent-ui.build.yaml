@@ -8,7 +8,7 @@ pool: IaC
 variables:
   - group: 'resource-access'
   - name: acrName
-    value: 'pocmcpcerm'
+    value: 'pocmcpservercerm'
   - name: rgName
     value: 'POC-MCP'
   - name: service
