@@ -102,7 +102,15 @@ steps:
         exit 1
       fi
 
-      # Enable admin user on ACR (required for ACI to pull images)
+      # Grant AcrPull role to the service principal
+      echo "Granting AcrPull role to service principal..."
+      ACR_ID=$(az acr show --name $(acrName) --query id -o tsv)
+      az role assignment create \
+        --assignee $(clientId) \
+        --role AcrPull \
+        --scope $ACR_ID || echo "Role assignment may already exist"
+
+      # Enable admin user on ACR as fallback
       echo "Enabling ACR admin user..."
       az acr update --name $(acrName) --admin-enabled true
 
@@ -121,6 +129,7 @@ steps:
       fi
 
       echo "ACR Username: $ACR_USERNAME"
+      echo "Password length: ${#ACR_PASSWORD}"
 
       # Verify the image exists in ACR
       echo "Verifying image exists in ACR..."
@@ -158,24 +167,40 @@ steps:
           --resource-group $(rgName) \
           --name $(containerInstanceName) \
           --yes
+
+        # Wait for deletion to complete
+        echo "Waiting for deletion to complete..."
+        sleep 10
       fi
 
       # Create container
       echo "Creating container with ACR credentials..."
+      echo "Registry: $ACR_LOGIN_SERVER"
+      echo "Image: $IMAGE_NAME"
+      echo "Username: $ACR_USERNAME"
+
+      # Write password to file to avoid shell escaping issues
+      echo -n "$ACR_PASSWORD" > /tmp/acr_password.txt
+
       az container create \
         --resource-group $(rgName) \
         --name $(containerInstanceName) \
         --image $IMAGE_NAME \
         --os-type Linux \
+        --ip-address Public \
         --registry-login-server $ACR_LOGIN_SERVER \
         --registry-username "$ACR_USERNAME" \
-        --registry-password "$ACR_PASSWORD" \
+        --registry-password "$(cat /tmp/acr_password.txt)" \
         --dns-name-label $(containerInstanceName) \
         --ports $(containerPort) \
         --cpu 1 \
         --memory 2 \
         --restart-policy Always \
-        --location swedencentral
+        --location swedencentral \
+        --verbose
+
+      # Clean up password file
+      rm -f /tmp/acr_password.txt
 
       # Get the FQDN
       FQDN=$(az container show \
