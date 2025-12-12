@@ -39,6 +39,7 @@ steps:
   - script: |
       # Parse tag to get version
       TAG_NAME=$(Build.SourceBranchName)
+      echo "Tag Name: $TAG_NAME"
       if [[ $TAG_NAME =~ ^cerm-mcp-v(.+)$ ]]; then
         VERSION=${BASH_REMATCH[1]}
         echo "Version: $VERSION"
