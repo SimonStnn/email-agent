@@ -6,12 +6,15 @@ trigger:
 pool: IaC
 
 variables:
-  group: 'resource-access'
-  acrName: 'pocmcpcerm'
-  rgName: 'POC-MCP'
-  service: 'm365-mcp'
-  context: 'm365-mcp'
-
+  - group: 'resource-access'
+  - name: acrName
+    value: 'pocmcpcerm'
+  - name: rgName
+    value: 'POC-MCP'
+  - name: service
+    value: 'm365-mcp'
+  - name: context
+    value: 'm365-mcp'
 steps:
   - checkout: self
 

@@ -6,11 +6,15 @@ trigger:
 pool: IaC
 
 variables:
-  group: 'resource-access'
-  acrName: 'pocmcpcerm'
-  rgName: 'POC-MCP'
-  service: 'agent-ui'
-  context: 'gradio-app'
+  - group: 'resource-access'
+  - name: acrName
+    value: 'pocmcpcerm'
+  - name: rgName
+    value: 'POC-MCP'
+  - name: service
+    value: 'agent-ui'
+  - name: context
+    value: 'gradio-app'
 
 steps:
   - checkout: self

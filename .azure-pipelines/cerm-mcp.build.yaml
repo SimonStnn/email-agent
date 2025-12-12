@@ -6,12 +6,15 @@ trigger:
 pool: IaC
 
 variables:
-  group: 'resource-access'
-  acrName: 'pocmcpcerm'
-  rgName: 'POC-MCP'
-  service: 'cerm-mcp'
-  context: 'mcp-server'
-
+  - group: 'resource-access'
+  - name: acrName
+    value: 'pocmcpcerm'
+  - name: rgName
+    value: 'POC-MCP'
+  - name: service
+    value: 'cerm-mcp'
+  - name: context
+    value: 'mcp-server'
 steps:
   - checkout: self
 
