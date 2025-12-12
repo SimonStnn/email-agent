@@ -18,24 +18,23 @@ variables:
 steps:
   - checkout: self
 
-  - script: |
+  - bash: |
       # Login to Azure
-      az login --service-principal -u $CLIENTID -p $CLIENTSECRET --tenant $TENANTID
+      az login --service-principal -u $(clientId) -p $(clientSecret) --tenant $(tenantId) || exit 1
 
       # Set subscription
-      az account set --subscription $SUBSCRIPTION
+      az account set --subscription $(subscription)
 
       # Create resource group if not exists
       az group create --name $(rgName) --location swedencentral --only-show-errors || echo "Resource group already exists"
 
+      # Register Microsoft.ContainerRegistry provider
+      echo "Registering Microsoft.ContainerRegistry provider..."
+      az provider register --namespace Microsoft.ContainerRegistry --wait
+
       # Create ACR if not exists
       az acr create --name $(acrName) --resource-group $(rgName) --sku Basic --only-show-errors || echo "ACR already exists"
     displayName: 'Create Resource Group and ACR if not exists'
-    env:
-      CLIENTID: $(clientId)
-      CLIENTSECRET: $(clientSecret)
-      TENANTID: $(tenantId)
-      SUBSCRIPTION: $(subscription)
 
   - script: |
       # Parse tag to get version

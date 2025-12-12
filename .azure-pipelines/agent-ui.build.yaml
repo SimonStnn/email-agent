@@ -20,12 +20,6 @@ steps:
   - checkout: self
 
   - bash: |
-      echo "Checking if variables are set..."
-      echo $(clientId)
-      echo $(clientSecret)
-      echo $(tenantId)
-      echo $(subscription)
-
       # Login to Azure
       az login --service-principal -u $(clientId) -p $(clientSecret) --tenant $(tenantId) || exit 1
 
@@ -34,6 +28,10 @@ steps:
 
       # Create resource group if not exists
       az group create --name $(rgName) --location swedencentral --only-show-errors || echo "Resource group already exists"
+
+      # Register Microsoft.ContainerRegistry provider
+      echo "Registering Microsoft.ContainerRegistry provider..."
+      az provider register --namespace Microsoft.ContainerRegistry --wait
 
       # Create ACR if not exists
       az acr create --name $(acrName) --resource-group $(rgName) --sku Basic --only-show-errors || echo "ACR already exists"
