@@ -91,118 +91,59 @@ steps:
     displayName: 'Build and Push Image'
 
   - bash: |
-      set -e  # Exit on any error
+      set -e
 
-      # Parse tag to get version
-      TAG_NAME=$(Build.SourceBranchName)
-      if [[ $TAG_NAME =~ ^m365-mcp-v(.+)$ ]]; then
-        VERSION=${BASH_REMATCH[1]}
-      else
-        echo "Invalid tag format"
-        exit 1
-      fi
-
-      # Grant AcrPull role to the service principal
-      echo "Granting AcrPull role to service principal..."
-      ACR_ID=$(az acr show --name $(acrName) --query id -o tsv)
-      az role assignment create \
-        --assignee $(clientId) \
-        --role AcrPull \
-        --scope $ACR_ID || echo "Role assignment may already exist"
-
-      # Enable admin user on ACR as fallback
-      echo "Enabling ACR admin user..."
-      az acr update --name $(acrName) --admin-enabled true
-
-      # Wait a moment for the admin user to be fully enabled
-      sleep 5
-
-      # Get ACR credentials
-      echo "Getting ACR credentials..."
-      ACR_USERNAME=$(az acr credential show --name $(acrName) --query username -o tsv)
-      ACR_PASSWORD=$(az acr credential show --name $(acrName) --query passwords[0].value -o tsv)
-
-      # Verify credentials were retrieved
-      if [ -z "$ACR_USERNAME" ] || [ -z "$ACR_PASSWORD" ]; then
-        echo "Failed to retrieve ACR credentials"
-        exit 1
-      fi
-
-      echo "ACR Username: $ACR_USERNAME"
-      echo "Password length: ${#ACR_PASSWORD}"
-
-      # Verify the image exists in ACR
-      echo "Verifying image exists in ACR..."
-      ACR_LOGIN_SERVER=$(acrName).azurecr.io
-      IMAGE_REPO=poc-mcp/$(service)
-
-      # List images to verify
-      az acr repository show --name $(acrName) --repository $IMAGE_REPO || {
-        echo "ERROR: Image repository $IMAGE_REPO not found in ACR"
-        echo "Available repositories:"
-        az acr repository list --name $(acrName) -o table
-        exit 1
-      }
-
-      # List tags to verify latest exists
-      echo "Available tags for $IMAGE_REPO:"
-      az acr repository show-tags --name $(acrName) --repository $IMAGE_REPO -o table
-
-      # Register Microsoft.ContainerInstance provider
-      echo "Registering Microsoft.ContainerInstance provider..."
+      # 1. Register Provider (just in case)
       az provider register --namespace Microsoft.ContainerInstance --wait
 
-      # Deploy to Azure Container Instances
+      # 2. Get Resource IDs
+      ACR_ID=$(az acr show --name $(acrName) --resource-group $(rgName) --query id -o tsv)
       ACR_LOGIN_SERVER=$(acrName).azurecr.io
       IMAGE_NAME=$ACR_LOGIN_SERVER/poc-mcp/$(service):latest
 
-      echo "Image: $IMAGE_NAME"
+      echo "Deploying container instance: $(containerInstanceName) with Managed Identity..."
 
-      echo "Deploying container instance: $(containerInstanceName)"
-
-      # Check if container exists and delete if it does
-      if az container show --resource-group $(rgName) --name $(containerInstanceName) &>/dev/null; then
-        echo "Container already exists, deleting..."
-        az container delete \
-          --resource-group $(rgName) \
-          --name $(containerInstanceName) \
-          --yes
-
-        # Wait for deletion to complete
-        echo "Waiting for deletion to complete..."
-        sleep 10
-      fi
-
-      # Create container
-      echo "Creating container with ACR credentials..."
-      echo "Registry: $ACR_LOGIN_SERVER"
-      echo "Image: $IMAGE_NAME"
-      echo "Username: $ACR_USERNAME"
-
-      # Write password to file to avoid shell escaping issues
-      echo -n "$ACR_PASSWORD" > /tmp/acr_password.txt
-
+      # 3. Create Container (Using --assign-identity)
+      # We intentionally DO NOT pass --registry-username or --registry-password here.
+      # The container will initially be created but might fail to pull immediately.
+      # This is expected until we assign the role in the next step.
       az container create \
         --resource-group $(rgName) \
         --name $(containerInstanceName) \
         --image $IMAGE_NAME \
         --os-type Linux \
         --ip-address Public \
-        --registry-login-server $ACR_LOGIN_SERVER \
-        --registry-username "$ACR_USERNAME" \
-        --registry-password "$(cat /tmp/acr_password.txt)" \
+        --assign-identity \
+        --scope $ACR_ID \
         --dns-name-label $(containerInstanceName) \
         --ports $(containerPort) \
         --cpu 1 \
         --memory 2 \
         --restart-policy Always \
-        --location swedencentral \
-        --verbose
+        --location swedencentral
 
-      # Clean up password file
-      rm -f /tmp/acr_password.txt
+      # 4. Grant "AcrPull" Permission to the ACI's Identity
+      echo "Granting AcrPull permission to ACI Identity..."
 
-      # Get the FQDN
+      # Fetch the Principal ID of the ACI we just created
+      ACI_PRINCIPAL_ID=$(az container show \
+        --name $(containerInstanceName) \
+        --resource-group $(rgName) \
+        --query identity.principalId -o tsv)
+
+      # Assign the role (Retry loop handles slight AD propagation delays)
+      for i in {1..5}; do
+        az role assignment create \
+          --assignee $ACI_PRINCIPAL_ID \
+          --scope $ACR_ID \
+          --role AcrPull && break || sleep 10
+      done
+
+      # 5. Restart ACI to force a fresh image pull with the new permissions
+      echo "Restarting container to apply permissions..."
+      az container restart --name $(containerInstanceName) --resource-group $(rgName)
+
+      # 6. Get FQDN for output
       FQDN=$(az container show \
         --resource-group $(rgName) \
         --name $(containerInstanceName) \
@@ -212,4 +153,4 @@ steps:
       echo "Deployment completed successfully!"
       echo "Service URL: http://$FQDN:$(containerPort)"
       echo "##############################################"
-    displayName: 'Deploy to Azure Container Instances'
+    displayName: 'Deploy to Azure Container Instances (Managed Identity)'
