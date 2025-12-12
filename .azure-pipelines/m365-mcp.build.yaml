@@ -89,16 +89,31 @@ steps:
       echo "Enabling ACR admin user..."
       az acr update --name $(acrName) --admin-enabled true
 
+      # Wait a moment for the admin user to be fully enabled
+      sleep 5
+
       # Get ACR credentials
+      echo "Getting ACR credentials..."
       ACR_USERNAME=$(az acr credential show --name $(acrName) --query username -o tsv)
       ACR_PASSWORD=$(az acr credential show --name $(acrName) --query passwords[0].value -o tsv)
+
+      # Verify credentials were retrieved
+      if [ -z "$ACR_USERNAME" ] || [ -z "$ACR_PASSWORD" ]; then
+        echo "Failed to retrieve ACR credentials"
+        exit 1
+      fi
+
+      echo "ACR Username: $ACR_USERNAME"
 
       # Register Microsoft.ContainerInstance provider
       echo "Registering Microsoft.ContainerInstance provider..."
       az provider register --namespace Microsoft.ContainerInstance --wait
 
       # Deploy to Azure Container Instances
-      IMAGE_NAME=$(acrName).azurecr.io/poc-mcp/$(service):latest
+      ACR_LOGIN_SERVER=$(acrName).azurecr.io
+      IMAGE_NAME=$ACR_LOGIN_SERVER/poc-mcp/$(service):latest
+
+      echo "Image: $IMAGE_NAME"
 
       echo "Deploying container instance: $(containerInstanceName)"
 
@@ -112,14 +127,15 @@ steps:
       fi
 
       # Create container
+      echo "Creating container with ACR credentials..."
       az container create \
         --resource-group $(rgName) \
         --name $(containerInstanceName) \
         --image $IMAGE_NAME \
         --os-type Linux \
-        --registry-login-server $(acrName).azurecr.io \
-        --registry-username $ACR_USERNAME \
-        --registry-password $ACR_PASSWORD \
+        --registry-login-server $ACR_LOGIN_SERVER \
+        --registry-username "$ACR_USERNAME" \
+        --registry-password "$ACR_PASSWORD" \
         --dns-name-label $(containerInstanceName) \
         --ports $(containerPort) \
         --cpu 1 \
