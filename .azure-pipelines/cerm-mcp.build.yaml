@@ -54,10 +54,21 @@ steps:
       fi
 
       # Build image
-      docker build -t $(service):$VERSION $(context)
+      echo "Building image: $(service):$VERSION"
+      docker build -t $(service):$VERSION $(context) || {
+        echo "ERROR: Docker build failed"
+        exit 1
+      }
+
+      # Verify image was built
+      docker images $(service):$VERSION
 
       # Login to ACR
-      az acr login --name $(acrName)
+      echo "Logging into ACR: $(acrName)"
+      az acr login --name $(acrName) || {
+        echo "ERROR: ACR login failed"
+        exit 1
+      }
 
       # Tag and push to poc-mcp repository
       ACR_LOGIN_SERVER=$(acrName).azurecr.io
@@ -70,10 +81,13 @@ steps:
       docker tag $(service):$VERSION $IMAGE_NAME:${VERSION%.*}  # x.x
       docker tag $(service):$VERSION $IMAGE_NAME:${VERSION%%.*}  # x
 
-      docker push $IMAGE_NAME:latest
-      docker push $IMAGE_NAME:$VERSION
-      docker push $IMAGE_NAME:${VERSION%.*}
-      docker push $IMAGE_NAME:${VERSION%%.*}
+      echo "Pushing images..."
+      docker push $IMAGE_NAME:latest || { echo "ERROR: Push failed for latest"; exit 1; }
+      docker push $IMAGE_NAME:$VERSION || { echo "ERROR: Push failed for $VERSION"; exit 1; }
+      docker push $IMAGE_NAME:${VERSION%.*} || { echo "ERROR: Push failed for ${VERSION%.*}"; exit 1; }
+      docker push $IMAGE_NAME:${VERSION%%.*} || { echo "ERROR: Push failed for ${VERSION%%.*}"; exit 1; }
+
+      echo "Successfully pushed all tags to ACR"
     displayName: 'Build and Push Image'
 
   - bash: |
@@ -107,6 +121,23 @@ steps:
       fi
 
       echo "ACR Username: $ACR_USERNAME"
+
+      # Verify the image exists in ACR
+      echo "Verifying image exists in ACR..."
+      ACR_LOGIN_SERVER=$(acrName).azurecr.io
+      IMAGE_REPO=poc-mcp/$(service)
+
+      # List images to verify
+      az acr repository show --name $(acrName) --repository $IMAGE_REPO || {
+        echo "ERROR: Image repository $IMAGE_REPO not found in ACR"
+        echo "Available repositories:"
+        az acr repository list --name $(acrName) -o table
+        exit 1
+      }
+
+      # List tags to verify latest exists
+      echo "Available tags for $IMAGE_REPO:"
+      az acr repository show-tags --name $(acrName) --repository $IMAGE_REPO -o table
 
       # Register Microsoft.ContainerInstance provider
       echo "Registering Microsoft.ContainerInstance provider..."
