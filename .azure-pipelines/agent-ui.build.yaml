@@ -60,7 +60,10 @@ steps:
       az acr login --name $(acrName)
 
       # Tag and push to poc-mcp repository
-      IMAGE_NAME=$(acrName).azurecr.io/poc-mcp/$(service)
+      ACR_LOGIN_SERVER=$(acrName).azurecr.io
+      IMAGE_NAME=$ACR_LOGIN_SERVER/poc-mcp/$(service)
+
+      echo "Tagging and pushing to: $IMAGE_NAME"
 
       docker tag $(service):$VERSION $IMAGE_NAME:latest
       docker tag $(service):$VERSION $IMAGE_NAME:$VERSION
