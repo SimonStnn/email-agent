@@ -21,12 +21,10 @@ steps:
 
   - bash: |
       echo "Checking if variables are set..."
-      if [ -z $(clientId)]; then echo "clientId is empty"; exit 1; fi
-      if [ -z $(clientSecret)]; then echo "clientSecret is empty"; exit 1; fi
-      if [ -z $(tenantId)]; then echo "tenantId is empty"; exit 1; fi
-      if [ -z $(subscription)]; then echo "subscription is empty"; exit 1; fi
-
-      echo "All variables are set, proceeding with Azure login..."
+      echo $(clientId)
+      echo $(clientSecret)
+      echo $(tenantId)
+      echo $(subscription)
 
       # Login to Azure
       az login --service-principal -u $(clientId) -p $(clientSecret) --tenant $(tenantId) || exit 1
@@ -35,7 +33,7 @@ steps:
       az account set --subscription $(subscription)
 
       # Create resource group if not exists
-      az group create --name $(rgName) --location eastus --only-show-errors || echo "Resource group already exists"
+      az group create --name $(rgName) --location swedencentral --only-show-errors || echo "Resource group already exists"
 
       # Create ACR if not exists
       az acr create --name $(acrName) --resource-group $(rgName) --sku Basic --only-show-errors || echo "ACR already exists"

@@ -26,7 +26,7 @@ steps:
       az account set --subscription $SUBSCRIPTION
 
       # Create resource group if not exists
-      az group create --name $(rgName) --location eastus --only-show-errors || echo "Resource group already exists"
+      az group create --name $(rgName) --location swedencentral --only-show-errors || echo "Resource group already exists"
 
       # Create ACR if not exists
       az acr create --name $(acrName) --resource-group $(rgName) --sku Basic --only-show-errors || echo "ACR already exists"
