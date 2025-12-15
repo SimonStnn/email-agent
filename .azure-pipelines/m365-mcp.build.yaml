@@ -78,11 +78,11 @@ steps:
       KV_URI=$(az keyvault show --name $(kvName) --resource-group $(rgName) --query properties.vaultUri -o tsv)
       KV_ID=$(az keyvault show --name $(kvName) --resource-group $(rgName) --query id -o tsv)
 
-      # Create secrets with empty values if they don't exist (to be filled manually in portal)
+      # Create secrets with placeholder values if they don't exist (to be filled manually in portal)
       for secret in M365_MCP_CLIENT_ID M365_MCP_TENANT_ID MCP_TRANSPORT MCP_AUTH_METHOD MCP_ALLOW_INSECURE MCP_HOST MCP_PORT MCP_PATH; do
         if ! az keyvault secret show --vault-name $(kvName) --name "$secret" &>/dev/null; then
           echo "Creating placeholder for $secret"
-          az keyvault secret set --vault-name $(kvName) -n "$secret" --value "" --only-show-errors
+          az keyvault secret set --vault-name $(kvName) -n "$secret" --value "PLACEHOLDER" --only-show-errors
         else
           echo "Secret $secret already exists"
         fi
