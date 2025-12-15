@@ -84,7 +84,7 @@ steps:
       sleep 10
 
       # Create secrets with placeholder values if they don't exist (to be filled manually in portal)
-      for secret in AZURE-OPENAI-ENDPOINT AZURE-OPENAI-API-KEY OPENAI-API-VERSION; do
+      for secret in AZURE-OPENAI-ENDPOINT AZURE-OPENAI-API-KEY OPENAI-API-VERSION AGENT_MCP_URLS; do
         if ! az keyvault secret show --vault-name $(kvName) --name "$secret" &>/dev/null; then
           echo "Creating placeholder for $secret"
           az keyvault secret set --vault-name $(kvName) -n "$secret" --value "PLACEHOLDER" --only-show-errors
@@ -102,6 +102,12 @@ steps:
   - bash: |
       set -e
       IMAGE=$(acrName).azurecr.io/poc-mcp/$(service):latest
+
+      # Fetch secrets from Key Vault
+      AZURE_OPENAI_ENDPOINT=$(az keyvault secret show --vault-name $(kvName) --name AZURE-OPENAI-ENDPOINT --query value -o tsv)
+      AZURE_OPENAI_API_KEY=$(az keyvault secret show --vault-name $(kvName) --name AZURE-OPENAI-API-KEY --query value -o tsv)
+      OPENAI_API_VERSION=$(az keyvault secret show --vault-name $(kvName) --name OPENAI-API-VERSION --query value -o tsv)
+      AGENT_MCP_URLS=$(az keyvault secret show --vault-name $(kvName) --name AGENT_MCP_URLS --query value -o tsv)
 
       if az container show --resource-group $(rgName) --name $(containerInstanceName) &>/dev/null; then
         az container delete --resource-group $(rgName) --name $(containerInstanceName) --yes
@@ -121,7 +127,11 @@ steps:
         --image $IMAGE \
         --assign-identity $UAI_ID \
         --acr-identity $UAI_ID \
-        --environment-variables KEY_VAULT_URI="$KV_URI" KEY_VAULT_NAME="$(kvName)" \
+        --secure-environment-variables \
+          AZURE_OPENAI_ENDPOINT="$AZURE_OPENAI_ENDPOINT" \
+          AZURE_OPENAI_API_KEY="$AZURE_OPENAI_API_KEY" \
+          OPENAI_API_VERSION="$OPENAI_API_VERSION" \
+          AGENT_MCP_URLS="$AGENT_MCP_URLS" \
         --os-type Linux \
         --ip-address Public \
         --ports $(containerPort) \

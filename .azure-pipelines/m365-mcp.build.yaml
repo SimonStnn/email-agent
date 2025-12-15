@@ -103,6 +103,16 @@ steps:
       set -e
       IMAGE=$(acrName).azurecr.io/poc-mcp/$(service):latest
 
+      # Fetch secrets from Key Vault
+      M365_MCP_CLIENT_ID=$(az keyvault secret show --vault-name $(kvName) --name M365-MCP-CLIENT-ID --query value -o tsv)
+      M365_MCP_TENANT_ID=$(az keyvault secret show --vault-name $(kvName) --name M365-MCP-TENANT-ID --query value -o tsv)
+      MCP_TRANSPORT=$(az keyvault secret show --vault-name $(kvName) --name MCP-TRANSPORT --query value -o tsv)
+      MCP_AUTH_METHOD=$(az keyvault secret show --vault-name $(kvName) --name MCP-AUTH-METHOD --query value -o tsv)
+      MCP_ALLOW_INSECURE=$(az keyvault secret show --vault-name $(kvName) --name MCP-ALLOW-INSECURE --query value -o tsv)
+      MCP_HOST=$(az keyvault secret show --vault-name $(kvName) --name MCP-HOST --query value -o tsv)
+      MCP_PORT=$(az keyvault secret show --vault-name $(kvName) --name MCP-PORT --query value -o tsv)
+      MCP_PATH=$(az keyvault secret show --vault-name $(kvName) --name MCP-PATH --query value -o tsv)
+
       if az container show --resource-group $(rgName) --name $(containerInstanceName) &>/dev/null; then
         az container delete --resource-group $(rgName) --name $(containerInstanceName) --yes
         echo "Waiting for container deletion to complete..."
@@ -121,7 +131,15 @@ steps:
         --image $IMAGE \
         --assign-identity $UAI_ID \
         --acr-identity $UAI_ID \
-        --environment-variables KEY_VAULT_URI="$KV_URI" KEY_VAULT_NAME="$(kvName)" \
+        --secure-environment-variables \
+          M365_MCP_CLIENT_ID="$M365_MCP_CLIENT_ID" \
+          M365_MCP_TENANT_ID="$M365_MCP_TENANT_ID" \
+          MCP_TRANSPORT="$MCP_TRANSPORT" \
+          MCP_AUTH_METHOD="$MCP_AUTH_METHOD" \
+          MCP_ALLOW_INSECURE="$MCP_ALLOW_INSECURE" \
+          MCP_HOST="$MCP_HOST" \
+          MCP_PORT="$MCP_PORT" \
+          MCP_PATH="$MCP_PATH" \
         --os-type Linux \
         --ip-address Public \
         --ports $(containerPort) \
