@@ -78,6 +78,11 @@ steps:
       KV_URI=$(az keyvault show --name $(kvName) --resource-group $(rgName) --query properties.vaultUri -o tsv)
       KV_ID=$(az keyvault show --name $(kvName) --resource-group $(rgName) --query id -o tsv)
 
+      # Grant service principal permission to manage secrets during deployment
+      SP_OBJECT_ID=$(az ad sp show --id $(clientId) --query id -o tsv)
+      az role assignment create --assignee $SP_OBJECT_ID --scope $KV_ID --role "Key Vault Secrets Officer" 2>/dev/null || true
+      sleep 10
+
       # Create secrets with placeholder values if they don't exist (to be filled manually in portal)
       for secret in AZURE-OPENAI-ENDPOINT AZURE-OPENAI-API-KEY OPENAI-API-VERSION; do
         if ! az keyvault secret show --vault-name $(kvName) --name "$secret" &>/dev/null; then
@@ -88,6 +93,7 @@ steps:
         fi
       done
 
+      # Grant managed identity read access to secrets
       az role assignment create --assignee $UAI_PRINCIPAL_ID --scope $KV_ID --role "Key Vault Secrets User" 2>/dev/null || true
 
       echo "##vso[task.setvariable variable=KV_URI]$KV_URI"
