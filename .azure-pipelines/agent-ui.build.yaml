@@ -31,6 +31,7 @@ steps:
       az account set --subscription $(subscription)
       az group create --name $(rgName) --location swedencentral --only-show-errors || true
       az provider register --namespace Microsoft.ContainerRegistry --wait
+      az provider register --namespace Microsoft.KeyVault --wait
       az acr create --name $(acrName) --resource-group $(rgName) --sku Basic --only-show-errors || true
     displayName: 'Setup Azure Resources'
 
