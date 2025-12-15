@@ -19,142 +19,93 @@ variables:
     value: 'cerm-mcp-aci'
   - name: containerPort
     value: '8000'
+  - name: kvName
+    value: 'cerm-mcp-kv'
 
 steps:
   - checkout: self
 
   - bash: |
-      # Login to Azure
-      az login --service-principal -u $(clientId) -p $(clientSecret) --tenant $(tenantId) || exit 1
-
-      # Set subscription
+      set -e
+      az login --service-principal -u $(clientId) -p $(clientSecret) --tenant $(tenantId)
       az account set --subscription $(subscription)
-
-      # Create resource group if not exists
-      az group create --name $(rgName) --location swedencentral --only-show-errors || echo "Resource group already exists"
-
-      # Register Microsoft.ContainerRegistry provider
-      echo "Registering Microsoft.ContainerRegistry provider..."
+      az group create --name $(rgName) --location swedencentral --only-show-errors || true
       az provider register --namespace Microsoft.ContainerRegistry --wait
+      az acr create --name $(acrName) --resource-group $(rgName) --sku Basic --only-show-errors || true
+    displayName: 'Setup Azure Resources'
 
-      # Create ACR if not exists
-      az acr create --name $(acrName) --resource-group $(rgName) --sku Basic --only-show-errors || echo "ACR already exists"
-    displayName: 'Create Resource Group and ACR if not exists'
-
-  - script: |
-      # Parse tag to get version
+  - bash: |
+      set -e
       TAG_NAME=$(Build.SourceBranchName)
-      echo "Tag Name: $TAG_NAME"
-      if [[ $TAG_NAME =~ ^cerm-mcp-v(.+)$ ]]; then
-        VERSION=${BASH_REMATCH[1]}
-        echo "Version: $VERSION"
-      else
-        echo "Invalid tag format"
-        exit 1
-      fi
+      VERSION=${TAG_NAME#cerm-mcp-v}
+      IMAGE=$(acrName).azurecr.io/poc-mcp/$(service)
 
-      # Build image
-      echo "Building image: $(service):$VERSION"
-      docker build -t $(service):$VERSION $(context) || {
-        echo "ERROR: Docker build failed"
-        exit 1
-      }
+      docker build -t $(service):$VERSION $(context)
+      az acr login --name $(acrName)
 
-      # Verify image was built
-      docker images $(service):$VERSION
+      docker tag $(service):$VERSION $IMAGE:latest
+      docker tag $(service):$VERSION $IMAGE:$VERSION
+      docker tag $(service):$VERSION $IMAGE:${VERSION%.*}
+      docker tag $(service):$VERSION $IMAGE:${VERSION%%.*}
 
-      # Login to ACR
-      echo "Logging into ACR: $(acrName)"
-      az acr login --name $(acrName) || {
-        echo "ERROR: ACR login failed"
-        exit 1
-      }
-
-      # Tag and push to poc-mcp repository
-      ACR_LOGIN_SERVER=$(acrName).azurecr.io
-      IMAGE_NAME=$ACR_LOGIN_SERVER/poc-mcp/$(service)
-
-      echo "Tagging and pushing to: $IMAGE_NAME"
-
-      docker tag $(service):$VERSION $IMAGE_NAME:latest
-      docker tag $(service):$VERSION $IMAGE_NAME:$VERSION
-      docker tag $(service):$VERSION $IMAGE_NAME:${VERSION%.*}  # x.x
-      docker tag $(service):$VERSION $IMAGE_NAME:${VERSION%%.*}  # x
-
-      echo "Pushing images..."
-      docker push $IMAGE_NAME:latest || { echo "ERROR: Push failed for latest"; exit 1; }
-      docker push $IMAGE_NAME:$VERSION || { echo "ERROR: Push failed for $VERSION"; exit 1; }
-      docker push $IMAGE_NAME:${VERSION%.*} || { echo "ERROR: Push failed for ${VERSION%.*}"; exit 1; }
-      docker push $IMAGE_NAME:${VERSION%%.*} || { echo "ERROR: Push failed for ${VERSION%%.*}"; exit 1; }
-
-      echo "Successfully pushed all tags to ACR"
+      docker push $IMAGE:latest
+      docker push $IMAGE:$VERSION
+      docker push $IMAGE:${VERSION%.*}
+      docker push $IMAGE:${VERSION%%.*}
     displayName: 'Build and Push Image'
 
   - bash: |
       set -e
-
-      # Identity Variables
       UAI_NAME="cerm-mcp-puller-id"
-
-      # 1. Create a User-Assigned Managed Identity
-      echo "Creating User-Assigned Identity: $UAI_NAME..."
-      az identity create --name $UAI_NAME --resource-group $(rgName)
-
-      # 2. Get Resource IDs needed for permissions
+      az identity create --name $UAI_NAME --resource-group $(rgName) || true
       UAI_ID=$(az identity show --name $UAI_NAME --resource-group $(rgName) --query id -o tsv)
       UAI_PRINCIPAL_ID=$(az identity show --name $UAI_NAME --resource-group $(rgName) --query principalId -o tsv)
       ACR_ID=$(az acr show --name $(acrName) --resource-group $(rgName) --query id -o tsv)
 
-      # 3. Grant AcrPull permission to this Identity
-      echo "Granting AcrPull role..."
-      # Retry loop to handle replication delays
-      for i in {1..5}; do
-        az role assignment create \
-          --assignee $UAI_PRINCIPAL_ID \
-          --scope $ACR_ID \
-          --role AcrPull && break || sleep 5
+      az role assignment create --assignee $UAI_PRINCIPAL_ID --scope $ACR_ID --role AcrPull 2>/dev/null || true
+      sleep 10
+
+      echo "##vso[task.setvariable variable=UAI_ID]$UAI_ID"
+      echo "##vso[task.setvariable variable=UAI_PRINCIPAL_ID]$UAI_PRINCIPAL_ID"
+    displayName: 'Setup Managed Identity'
+
+  - bash: |
+      set -e
+      az keyvault create --name $(kvName) --resource-group $(rgName) --location swedencentral || true
+      KV_URI=$(az keyvault show --name $(kvName) --resource-group $(rgName) --query properties.vaultUri -o tsv)
+
+      for secret in AZURE_OPENAI_ENDPOINT AZURE_OPENAI_API_KEY OPENAI_API_VERSION; do
+        if [ -n "${!secret-}" ]; then
+          az keyvault secret set --vault-name $(kvName) -n "$secret" --value "${!secret}" --only-show-errors
+        fi
       done
 
-      # Wait briefly for permission propagation
-      sleep 30
+      az keyvault set-policy --name $(kvName) --object-id $UAI_PRINCIPAL_ID --secret-permissions get
 
-      # 4. Deploy Container
-      ACR_LOGIN_SERVER=$(acrName).azurecr.io
-      IMAGE_NAME=$ACR_LOGIN_SERVER/poc-mcp/$(service):latest
+      echo "##vso[task.setvariable variable=KV_URI]$KV_URI"
+    displayName: 'Setup Key Vault'
 
-      echo "Deploying container with User-Assigned Identity..."
+  - bash: |
+      set -e
+      IMAGE=$(acrName).azurecr.io/poc-mcp/$(service):latest
 
-      # Clean up previous instance to ensure clean state
-      if az container show --resource-group $(rgName) --name $(containerInstanceName) &>/dev/null; then
-         echo "Deleting existing container..."
-         az container delete --resource-group $(rgName) --name $(containerInstanceName) --yes
-      fi
+      az container delete --resource-group $(rgName) --name $(containerInstanceName) --yes 2>/dev/null || true
 
-      # Create ACI
-      # --acr-identity matches the error: it tells ACI "Use this specific ID to pull"
       az container create \
         --resource-group $(rgName) \
         --name $(containerInstanceName) \
-        --image $IMAGE_NAME \
+        --image $IMAGE \
         --assign-identity $UAI_ID \
         --acr-identity $UAI_ID \
+        --environment-variables KEY_VAULT_URI="$KV_URI" KEY_VAULT_NAME="$(kvName)" \
         --os-type Linux \
         --ip-address Public \
         --ports $(containerPort) \
         --dns-name-label $(containerInstanceName) \
-        --cpu 1 \
-        --memory 2 \
+        --cpu 1 --memory 2 \
         --restart-policy Always \
         --location swedencentral
 
-      # 5. Output Results
-      FQDN=$(az container show \
-        --resource-group $(rgName) \
-        --name $(containerInstanceName) \
-        --query ipAddress.fqdn -o tsv)
-
-      echo "##############################################"
-      echo "Deployment successful!"
-      echo "Service URL: http://$FQDN:$(containerPort)"
-      echo "##############################################"
-    displayName: 'Deploy to Azure Container Instances (User-Assigned Identity)'
+      FQDN=$(az container show --resource-group $(rgName) --name $(containerInstanceName) --query ipAddress.fqdn -o tsv)
+      echo "Deployed: http://$FQDN:$(containerPort)"
+    displayName: 'Deploy Container'
