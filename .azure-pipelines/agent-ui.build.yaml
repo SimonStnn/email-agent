@@ -1,0 +1,145 @@
+trigger:
+  tags:
+    include:
+      - agent-ui-v*
+
+pool: IaC
+
+variables:
+  - group: 'resource-access'
+  - name: acrName
+    value: 'pocmcpservercerm'
+  - name: rgName
+    value: 'POC-MCP'
+  - name: service
+    value: 'agent-ui'
+  - name: context
+    value: 'gradio-app'
+  - name: containerInstanceName
+    value: 'agent-ui-aci'
+  - name: containerPort
+    value: '7860'
+  - name: kvName
+    value: 'cerm-mcp-kv'
+
+steps:
+  - checkout: self
+
+  - bash: |
+      set -e
+      az login --service-principal -u $(clientId) -p $(clientSecret) --tenant $(tenantId)
+      az account set --subscription $(subscription)
+      az group create --name $(rgName) --location swedencentral --only-show-errors || true
+      az provider register --namespace Microsoft.ContainerRegistry --wait
+      az provider register --namespace Microsoft.KeyVault --wait
+      az acr create --name $(acrName) --resource-group $(rgName) --sku Basic --only-show-errors || true
+    displayName: 'Setup Azure Resources'
+
+  - bash: |
+      set -e
+      TAG_NAME=$(Build.SourceBranchName)
+      VERSION=${TAG_NAME#agent-ui-v}
+      IMAGE=$(acrName).azurecr.io/poc-mcp/$(service)
+
+      docker build -t $(service):$VERSION $(context)
+      az acr login --name $(acrName)
+
+      docker tag $(service):$VERSION $IMAGE:latest
+      docker tag $(service):$VERSION $IMAGE:$VERSION
+      docker tag $(service):$VERSION $IMAGE:${VERSION%.*}
+      docker tag $(service):$VERSION $IMAGE:${VERSION%%.*}
+
+      docker push $IMAGE:latest
+      docker push $IMAGE:$VERSION
+      docker push $IMAGE:${VERSION%.*}
+      docker push $IMAGE:${VERSION%%.*}
+    displayName: 'Build and Push Image'
+
+  - bash: |
+      set -e
+      UAI_NAME="agent-ui-puller-id"
+      az identity create --name $UAI_NAME --resource-group $(rgName) || true
+      UAI_ID=$(az identity show --name $UAI_NAME --resource-group $(rgName) --query id -o tsv)
+      UAI_PRINCIPAL_ID=$(az identity show --name $UAI_NAME --resource-group $(rgName) --query principalId -o tsv)
+      ACR_ID=$(az acr show --name $(acrName) --resource-group $(rgName) --query id -o tsv)
+
+      echo "Assigning AcrPull role to $UAI_PRINCIPAL_ID"
+      az role assignment create --assignee $UAI_PRINCIPAL_ID --scope $ACR_ID --role AcrPull 2>/dev/null || true
+      echo "Waiting for RBAC propagation..."
+      sleep 30
+
+      echo "##vso[task.setvariable variable=UAI_ID]$UAI_ID"
+      echo "##vso[task.setvariable variable=UAI_PRINCIPAL_ID]$UAI_PRINCIPAL_ID"
+    displayName: 'Setup Managed Identity'
+
+  - bash: |
+      set -e
+      az keyvault create --name $(kvName) --resource-group $(rgName) --location swedencentral || true
+      KV_URI=$(az keyvault show --name $(kvName) --resource-group $(rgName) --query properties.vaultUri -o tsv)
+      KV_ID=$(az keyvault show --name $(kvName) --resource-group $(rgName) --query id -o tsv)
+
+      # Grant service principal permission to manage secrets during deployment
+      SP_OBJECT_ID=$(az ad sp show --id $(clientId) --query id -o tsv)
+      az role assignment create --assignee $SP_OBJECT_ID --scope $KV_ID --role "Key Vault Secrets Officer" 2>/dev/null || true
+      sleep 10
+
+      # Create secrets with placeholder values if they don't exist (to be filled manually in portal)
+      for secret in AZURE-OPENAI-ENDPOINT AZURE-OPENAI-API-KEY OPENAI-API-VERSION AGENT-MCP-URLS; do
+        if ! az keyvault secret show --vault-name $(kvName) --name "$secret" &>/dev/null; then
+          echo "Creating placeholder for $secret"
+          az keyvault secret set --vault-name $(kvName) -n "$secret" --value "PLACEHOLDER" --only-show-errors
+        else
+          echo "Secret $secret already exists"
+        fi
+      done
+
+      # Grant managed identity read access to secrets
+      az role assignment create --assignee $UAI_PRINCIPAL_ID --scope $KV_ID --role "Key Vault Secrets User" 2>/dev/null || true
+
+      echo "##vso[task.setvariable variable=KV_URI]$KV_URI"
+    displayName: 'Setup Key Vault'
+
+  - bash: |
+      set -e
+      IMAGE=$(acrName).azurecr.io/poc-mcp/$(service):latest
+
+      # Fetch secrets from Key Vault
+      AZURE_OPENAI_ENDPOINT=$(az keyvault secret show --vault-name $(kvName) --name AZURE-OPENAI-ENDPOINT --query value -o tsv)
+      AZURE_OPENAI_API_KEY=$(az keyvault secret show --vault-name $(kvName) --name AZURE-OPENAI-API-KEY --query value -o tsv)
+      OPENAI_API_VERSION=$(az keyvault secret show --vault-name $(kvName) --name OPENAI-API-VERSION --query value -o tsv)
+      AGENT_MCP_URLS=$(az keyvault secret show --vault-name $(kvName) --name AGENT-MCP-URLS --query value -o tsv)
+
+      if az container show --resource-group $(rgName) --name $(containerInstanceName) &>/dev/null; then
+        az container delete --resource-group $(rgName) --name $(containerInstanceName) --yes
+        echo "Waiting for container deletion to complete..."
+        for i in {1..30}; do
+          if ! az container show --resource-group $(rgName) --name $(containerInstanceName) &>/dev/null; then
+            echo "Container deleted successfully"
+            break
+          fi
+          sleep 5
+        done
+      fi
+
+      az container create \
+        --resource-group $(rgName) \
+        --name $(containerInstanceName) \
+        --image $IMAGE \
+        --assign-identity $UAI_ID \
+        --acr-identity $UAI_ID \
+        --secure-environment-variables \
+          AZURE_OPENAI_ENDPOINT="$AZURE_OPENAI_ENDPOINT" \
+          AZURE_OPENAI_API_KEY="$AZURE_OPENAI_API_KEY" \
+          OPENAI_API_VERSION="$OPENAI_API_VERSION" \
+          AGENT_MCP_URLS="$AGENT_MCP_URLS" \
+        --os-type Linux \
+        --ip-address Public \
+        --ports $(containerPort) \
+        --dns-name-label $(containerInstanceName) \
+        --cpu 1 --memory 2 \
+        --restart-policy Always \
+        --location swedencentral
+
+      FQDN=$(az container show --resource-group $(rgName) --name $(containerInstanceName) --query ipAddress.fqdn -o tsv)
+      echo "Deployed: http://$FQDN:$(containerPort)"
+    displayName: 'Deploy Container'

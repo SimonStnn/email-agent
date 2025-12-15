@@ -104,8 +104,7 @@ async def init_agent() -> None:
 
     async def session_runner():
         global _mcp_session, _mcp_session_ctx, tools
-        session_ctxs = {server_name: mcp_client.session(
-            server_name) for server_name in mcp_client.connections}
+        session_ctxs = {server_name: mcp_client.session(server_name) for server_name in mcp_client.connections}
         sessions = {}
         _mcp_session_ctx = session_ctxs
         try:
@@ -118,8 +117,7 @@ async def init_agent() -> None:
                 try:
                     tools_local.extend(await load_mcp_tools(session))
                 except Exception as e:
-                    print(
-                        f"Warning: Failed to load tools from {server_name}: {e}")
+                    print(f"Warning: Failed to load tools from {server_name}: {e}")
             # store the tools for use by the agent
             tools = tools_local
             # Wait until shutdown is signaled

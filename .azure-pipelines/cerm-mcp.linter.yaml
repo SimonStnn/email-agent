@@ -4,7 +4,7 @@ trigger:
       - main
   paths:
     include:
-      - mcp-server
+      - mcp-server/**
 
 pool: IaC
 
@@ -13,17 +13,18 @@ variables:
   PRE_COMMIT_HOME: $(Pipeline.Workspace)/.cache/pre-commit
 
 steps:
+  - checkout: self
+    persistCredentials: true
+
   - script: |
       pwd
       ls -la
-    displayName: Install uv
+    displayName: Debug
 
   - script: |
       echo "Setting up environment with uv..."
       curl -LsSf https://astral.sh/uv/install.sh | sh
       uv --version
-
-      echo "CWD: $(pwd)"
 
       echo "Installing Python version from .python-version..."
       uv python install $(cat .python-version)
@@ -34,8 +35,16 @@ steps:
     displayName: Setup Environment
 
   - script: |
-      uv run pre-commit run --all-files --show-diff-on-failure
+      uv run ruff check . && uv run ruff format --check --diff .
     workingDirectory: $(projectDir)
-    env:
-      PRE_COMMIT_HOME: $(PRE_COMMIT_HOME)
-    displayName: Run Linters
+    displayName: Run Ruff
+
+  - script: |
+      uv run mypy src/
+    workingDirectory: $(projectDir)
+    displayName: Run MyPy
+
+  - script: |
+      uv run isort --check-only .
+    workingDirectory: $(projectDir)
+    displayName: Run Isort
