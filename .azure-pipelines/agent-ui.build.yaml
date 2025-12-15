@@ -79,7 +79,7 @@ steps:
       KV_ID=$(az keyvault show --name $(kvName) --resource-group $(rgName) --query id -o tsv)
 
       # Create secrets with placeholder values if they don't exist (to be filled manually in portal)
-      for secret in AZURE_OPENAI_ENDPOINT AZURE_OPENAI_API_KEY OPENAI_API_VERSION; do
+      for secret in AZURE-OPENAI-ENDPOINT AZURE-OPENAI-API-KEY OPENAI-API-VERSION; do
         if ! az keyvault secret show --vault-name $(kvName) --name "$secret" &>/dev/null; then
           echo "Creating placeholder for $secret"
           az keyvault secret set --vault-name $(kvName) -n "$secret" --value "PLACEHOLDER" --only-show-errors
