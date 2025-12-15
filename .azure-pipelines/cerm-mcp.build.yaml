@@ -91,7 +91,17 @@ steps:
       set -e
       IMAGE=$(acrName).azurecr.io/poc-mcp/$(service):latest
 
-      az container delete --resource-group $(rgName) --name $(containerInstanceName) --yes 2>/dev/null || true
+      if az container show --resource-group $(rgName) --name $(containerInstanceName) &>/dev/null; then
+        az container delete --resource-group $(rgName) --name $(containerInstanceName) --yes
+        echo "Waiting for container deletion to complete..."
+        for i in {1..30}; do
+          if ! az container show --resource-group $(rgName) --name $(containerInstanceName) &>/dev/null; then
+            echo "Container deleted successfully"
+            break
+          fi
+          sleep 5
+        done
+      fi
 
       az container create \
         --resource-group $(rgName) \
