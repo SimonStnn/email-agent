@@ -16,9 +16,9 @@ ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 
 # 3. Install dependencies ONLY (Layer 1)
-# We copy pyproject.toml and uv.lock. 
+# We copy pyproject.toml and uv.lock.
 # We DO NOT copy README.md yet.
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml ./
 
 # CRITICAL FIX: --no-install-project
 # This tells uv: "Don't read pyproject.toml metadata or look for README yet, just give me the libraries."
