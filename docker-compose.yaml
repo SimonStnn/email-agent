@@ -1,0 +1,28 @@
+name: email-agent
+
+services:
+  cerm-mcp:
+    build:
+      context: ./mcp-server
+    ports:
+      - "8000:8000"
+
+  m365-mcp:
+    build:
+      context: ./m365-mcp
+    ports:
+      - "8400:8400"
+
+  email-agent-ui:
+    build:
+      context: ./gradio-app
+    ports:
+      - "7860:7860"
+    environment:
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - OPENAI_API_VERSION=${OPENAI_API_VERSION}
+      - AGENT_MCP_URLS=${AGENT_MCP_URLS}
+    depends_on:
+      - cerm-mcp
+      - m365-mcp

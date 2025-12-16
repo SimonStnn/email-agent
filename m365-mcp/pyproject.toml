@@ -1,0 +1,55 @@
+[project]
+name = "m365-mcp"
+version = "0.2.3"
+description = "Microsoft 365 MCP server for Outlook, Calendar, and OneDrive with multi-account support"
+readme = "README.md"
+authors = [
+    { name = "robin-collins", email = "robin.f.collins@outlook.com"},
+    { name = "elyx", email = "elio@pascarelli.com" }
+]
+requires-python = ">=3.12"
+license = "MIT"
+keywords = ["mcp", "microsoft-365", "outlook", "onedrive", "calendar", "ai", "microsoft-graph"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "fastmcp>=2.8.0",
+    "httpx>=0.28.1",
+    "msal>=1.32.3",
+    "python-dotenv>=1.1.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "keyring>=25.6.0",
+    "sqlcipher3>=0.5.4",
+    "pysqlcipher3>=1.2.0",
+    "pyjwt>=2.10.1",
+    "coverage>=7.10.7",
+]
+
+[project.urls]
+Homepage = "https://github.com/robin-collins/m365-mcp"
+Repository = "https://github.com/robin-collins/m365-mcp"
+Issues = "https://github.com/robin-collins/m365-mcp/issues"
+Documentation = "https://github.com/robin-collins/m365-mcp#readme"
+
+[project.scripts]
+m365-mcp = "m365_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mcp>=1.9.3",
+    "pyright>=1.1.406",
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=5.0.0",
+]

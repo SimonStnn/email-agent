@@ -1,0 +1,69 @@
+{
+    "mcpServers": {
+      "m365-mcp": {
+        "transportType": "streamable-http",
+        "url": "http://127.0.0.1:8000/mcp",
+        "headers": {
+          "Authorization": "b34de362c92ca87b9d3fea746757af1abe0f2da351ce447406b14ee17b6dba79"
+        },
+        "timeout": 30,
+        "options": {
+          "toolFilter": {
+            "mode": "allow",
+            "list": [
+              "list_emails",
+              "get_email",
+              "create_email_draft",
+              "send_email",
+              "reply_to_email",
+              "reply_all_email",
+              "update_email",
+              "move_email",
+              "delete_email",
+              "get_attachment",
+              "search_emails",
+              "list_message_rules",
+              "get_message_rule",
+              "create_message_rule",
+              "update_message_rule",
+              "delete_message_rule",
+              "move_rule_to_top",
+              "move_rule_to_bottom",
+              "move_rule_up",
+              "move_rule_down",
+              "list_events",
+              "get_event",
+              "create_event",
+              "update_event",
+              "delete_event",
+              "respond_event",
+              "check_availability",
+              "search_events",
+              "list_contacts",
+              "get_contact",
+              "create_contact",
+              "update_contact",
+              "delete_contact",
+              "search_contacts",
+              "list_files",
+              "get_file",
+              "create_file",
+              "update_file",
+              "delete_file",
+              "search_files",
+              "list_folders",
+              "get_folder",
+              "get_folder_tree",
+              "unified_search",
+              "list_accounts",
+              "authenticate_account",
+              "complete_authentication",
+              "list_mail_folders",
+              "get_mail_folder",
+              "get_mail_folder_tree"
+            ]
+          }
+        }
+      }
+    }
+  }

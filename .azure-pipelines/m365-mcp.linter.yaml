@@ -1,0 +1,56 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - m365-mcp/**
+
+pool: IaC
+
+variables:
+  projectDir: 'm365-mcp'
+  PRE_COMMIT_HOME: $(Pipeline.Workspace)/.cache/pre-commit
+
+steps:
+  - checkout: self
+    persistCredentials: true
+
+  - script: |
+      pwd
+      ls -la
+    displayName: Debug
+
+  - script: |
+      echo "Setting up environment with uv..."
+      curl -LsSf https://astral.sh/uv/install.sh | sh
+      uv --version
+
+      echo "Installing Python version from .python-version..."
+      uv python install $(cat .python-version)
+
+      echo "Syncing dependencies..."
+      uv sync --all-extras --dev
+    workingDirectory: $(projectDir)
+    displayName: Setup Environment
+
+  - script: |
+      uv run pyright
+    workingDirectory: $(projectDir)
+    displayName: Run Linters
+
+  - script: |
+      # Read version from pyproject.toml
+      VERSION=$(grep '^version =' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+
+      echo "Version: m365-mcp=$VERSION"
+
+      # Configure git
+      git config --global user.email "azure-pipelines@azure.com"
+      git config --global user.name "Azure Pipelines"
+
+      # Create and push tag
+      git tag "m365-mcp-v$VERSION"
+      git push --tags
+    workingDirectory: $(projectDir)
+    displayName: Push Version Tag

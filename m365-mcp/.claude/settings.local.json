@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(timeout 30 uv run pytest tests/test_tool_confirmation.py tests/test_validators.py -v)",
+      "Bash(python:*)",
+      "Bash(lsof:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(sudo lsof:*)",
+      "Bash(uv run:*)",
+      "Bash(chmod:*)",
+      "Bash(python3:*)",
+      "Bash(env)",
+      "Bash(timeout:*)",
+      "Bash(pgrep:*)",
+      "Bash(bash:*)",
+      "Bash(ast-grep --lang Python -p 'print($$$)' src/)",
+      "Bash(cat .git/config)",
+      "Bash(uv build)",
+      "Bash(uv publish)",
+      "mcp__m365-mcp__account_list",
+      "mcp__m365-mcp__folder_get_tree",
+      "Read(//home/tech/**)",
+      "mcp__m365__account_list",
+      "mcp__m365__folder_get_tree",
+      "Bash(ast-grep:*)",
+      "Bash(uvx ruff format:*)",
+      "Bash(uvx ruff check:*)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "outputStyle": "default"
+}

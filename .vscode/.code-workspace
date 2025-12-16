@@ -1,0 +1,38 @@
+{
+	"folders": [
+		{
+			"name": "Root",
+			"path": ".."
+		},
+		{
+			"name": "MCP Server",
+			"path": "../mcp-server"
+		},
+		{
+			"name": "m365-mcp",
+			"path": "../m365-mcp"
+		},
+		{
+			"name": "Gradio App",
+			"path": "../gradio-app"
+		},
+	],
+	"settings": {
+		"files.exclude": {
+			"mcp-server/": true,
+			"gradio-app/": true,
+			"m365-mcp/": true,
+		},
+	},
+	"extensions": {
+		"recommendations": [
+			"ms-azure-devops.azure-pipelines",
+			"ms-python.python",
+			"ms-python.debugpy",
+			"ms-python.vscode-python-envs",
+			// Not included in devcontainer but useful for remote container development
+			"ms-vscode-remote.remote-containers",
+			"mhutchie.git-graph",
+		]
+	}
+}

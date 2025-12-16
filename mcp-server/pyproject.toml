@@ -1,0 +1,30 @@
+[project]
+name = "mcp-server"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  # Runtime / runtime-facing libraries
+  "gradio~=5.49.1",
+  "langchain~=1.0.2",
+  "langchain-ollama~=1.0.0",
+  "langchain-openai~=1.0.1",
+  "mcp[cli]>=1.2.0",
+  "mcpo~=0.0.19",
+  "pinecone~=7.3.0",
+  "pydantic~=2.11.10",
+  "pydantic-settings~=2.11.0",
+  "python-dotenv~=1.2.1",
+  "rich~=14.2.0",
+]
+
+[dependency-groups]
+dev = [
+  "black~=25.9.0",
+  "flake8~=7.3.0",
+  "flake8-pyproject~=1.2.3",
+  "isort~=7.0.0",
+  "mypy~=1.18.2",
+  "pre-commit~=4.3.0",
+]
