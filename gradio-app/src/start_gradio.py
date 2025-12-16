@@ -162,7 +162,7 @@ def render_mcp_client_info() -> None:
     gr.Markdown("## MCP Client Connections")
 
     for key, conn in connections.items():
-        name = re.sub(r"[_\-:,]", " ", key).title()
+        name = re.sub(r"[_\-:,.]", " ", key).title()
         with gr.Accordion(name, open=False):
             if isinstance(conn, dict):
                 transport = conn.get("transport", "unknown")

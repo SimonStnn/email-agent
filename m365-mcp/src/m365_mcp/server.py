@@ -1,12 +1,13 @@
-import os
-import sys
-import signal
-import atexit
 import argparse
+import atexit
 import logging
+import os
+import signal
+import sys
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
+
 from dotenv import load_dotenv
-from importlib.metadata import version, PackageNotFoundError
 
 # Logger will be initialized after argument parsing
 logger: logging.Logger | None = None
@@ -32,9 +33,7 @@ def _setup_signal_handlers() -> None:
     def signal_handler(signum, frame):
         sig_name = signal.Signals(signum).name
         assert logger is not None
-        logger.warning(
-            f"Received signal {sig_name} ({signum}), shutting down gracefully"
-        )
+        logger.warning(f"Received signal {sig_name} ({signum}), shutting down gracefully")
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, signal_handler)
@@ -87,8 +86,8 @@ def main() -> None:
 
     # Import local modules after loading environment
     # (This allows auth.py to access environment variables)
+    from .logging_config import get_logger, setup_logging
     from .tools import mcp
-    from .logging_config import setup_logging, get_logger
 
     # Initialize logger after loading environment
     global logger
@@ -132,9 +131,7 @@ def main() -> None:
 
         # SECURITY: Warn if binding to all interfaces
         if host in ["0.0.0.0", "::", ""]:
-            logger.warning(
-                f"Binding to all network interfaces ({host}) - ensure firewall is configured!"
-            )
+            logger.warning(f"Binding to all network interfaces ({host}) - ensure firewall is configured!")
             print(
                 "⚠️  WARNING: Binding to all network interfaces. Ensure firewall is configured!",
                 file=sys.stderr,
@@ -161,9 +158,7 @@ def main() -> None:
 
             # Require explicit opt-in to run without auth
             if os.getenv("MCP_ALLOW_INSECURE") != "true":
-                logger.error(
-                    "Refusing to start insecure HTTP server without MCP_ALLOW_INSECURE=true"
-                )
+                logger.error("Refusing to start insecure HTTP server without MCP_ALLOW_INSECURE=true")
                 print(
                     "Error: Refusing to start insecure HTTP server. Set MCP_ALLOW_INSECURE=true to override",
                     file=sys.stderr,
@@ -210,8 +205,8 @@ def main() -> None:
 def _run_http_with_bearer_auth(mcp, host: str, port: int, path: str) -> None:
     """Run Streamable HTTP server with bearer token authentication"""
     assert logger is not None
-    from fastapi import FastAPI, Request
     import uvicorn
+    from fastapi import FastAPI, Request
 
     logger.info("Configuring bearer token authentication")
 
@@ -226,9 +221,7 @@ def _run_http_with_bearer_auth(mcp, host: str, port: int, path: str) -> None:
 
     # Validate token is sufficiently secure
     if len(auth_token) < 32:
-        logger.warning(
-            f"MCP_AUTH_TOKEN is too short ({len(auth_token)} chars, minimum 32 recommended)"
-        )
+        logger.warning(f"MCP_AUTH_TOKEN is too short ({len(auth_token)} chars, minimum 32 recommended)")
         print(
             "⚠️  WARNING: MCP_AUTH_TOKEN is too short (minimum 32 characters recommended)",
             file=sys.stderr,
@@ -244,8 +237,9 @@ def _run_http_with_bearer_auth(mcp, host: str, port: int, path: str) -> None:
     async def auth_middleware(request: Request, call_next):
         """Validate bearer token on all requests"""
         assert logger is not None
-        from fastapi.responses import JSONResponse
         import time
+
+        from fastapi.responses import JSONResponse
 
         start_time = time.time()
         client_ip = request.client.host if request.client else "unknown"
@@ -257,18 +251,14 @@ def _run_http_with_bearer_auth(mcp, host: str, port: int, path: str) -> None:
 
         # Skip auth for common browser requests (return 404 instead of 401)
         if request.url.path in ["/favicon.ico", "/robots.txt"]:
-            logger.debug(
-                f"Ignoring browser request: {request.url.path} from {client_ip}"
-            )
+            logger.debug(f"Ignoring browser request: {request.url.path} from {client_ip}")
             return JSONResponse(status_code=404, content={"detail": "Not Found"})
 
         logger.debug(f"Request: {request.method} {request.url.path} from {client_ip}")
 
         auth_header = request.headers.get("Authorization")
         if not auth_header:
-            logger.warning(
-                f"Unauthorized request (missing auth header) from {client_ip} to {request.url.path}"
-            )
+            logger.warning(f"Unauthorized request (missing auth header) from {client_ip} to {request.url.path}")
             return JSONResponse(
                 status_code=401,
                 content={"detail": "Missing Authorization header"},
@@ -276,22 +266,16 @@ def _run_http_with_bearer_auth(mcp, host: str, port: int, path: str) -> None:
             )
 
         if not auth_header.startswith("Bearer "):
-            logger.warning(
-                f"Unauthorized request (invalid auth format) from {client_ip} to {request.url.path}"
-            )
+            logger.warning(f"Unauthorized request (invalid auth format) from {client_ip} to {request.url.path}")
             return JSONResponse(
                 status_code=401,
-                content={
-                    "detail": "Invalid Authorization header format. Expected: Bearer <token>"
-                },
+                content={"detail": "Invalid Authorization header format. Expected: Bearer <token>"},
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
         token = auth_header[7:]  # Remove "Bearer " prefix
         if token != auth_token:
-            logger.warning(
-                f"Unauthorized request (invalid token) from {client_ip} to {request.url.path}"
-            )
+            logger.warning(f"Unauthorized request (invalid token) from {client_ip} to {request.url.path}")
             return JSONResponse(
                 status_code=401,
                 content={"detail": "Invalid authentication token"},
@@ -331,8 +315,17 @@ def _run_http_with_bearer_auth(mcp, host: str, port: int, path: str) -> None:
     print(f"✅ Health check available at http://{host}:{port}/health", file=sys.stderr)
     print(f"✅ MCP endpoint: http://{host}:{port}{path}", file=sys.stderr)
 
-    # Run the server
-    uvicorn.run(app, host=host, port=port, log_level="info")
+    # Run the server with single worker to maintain state
+    logger.info("Starting uvicorn with single worker to maintain application state")
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level="info",
+        workers=1,
+        reload=False,
+        access_log=True,
+    )
 
 
 if __name__ == "__main__":

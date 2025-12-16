@@ -2,7 +2,7 @@
     "mcpServers": {
       "m365-mcp": {
         "transportType": "streamable-http",
-        "url": "http://127.0.0.1:8000/mcp",
+        "url": "http://127.0.0.1:8400/mcp",
         "headers": {
           "Authorization": "b34de362c92ca87b9d3fea746757af1abe0f2da351ce447406b14ee17b6dba79"
         },
